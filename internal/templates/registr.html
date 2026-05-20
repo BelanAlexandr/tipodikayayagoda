@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация</title>
+
+    <style>
+        input,
+        select,
+        button {
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 350px;
+        }
+
+        form {
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        input,
+        button {
+            width: 100%;
+            margin-top: 12px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .links {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .links a {
+            text-decoration: none;
+            color: #2196F3;
+        }
+
+        .error {
+            margin-top: 10px;
+            color: red;
+        }
+
+        .success {
+            margin-top: 10px;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <h2>Регистрация</h2>
+
+    <form method="POST">
+
+        <input
+            type="text"
+            name="login"
+            placeholder="Введите логин"
+            required
+        >
+
+        <input
+            type="password"
+            name="password"
+            placeholder="Введите пароль"
+            required
+        >
+            <select name="role" required>
+        <option value="" disabled selected>Выберите роль</option>
+        <option value="client">Клиент</option>
+        <option value="seller">Продавец</option>
+        <option value="admin">Админ</option>
+    </select>
+        <button type="submit">
+            Зарегистрироваться
+        </button>
+
+    </form>
+
+    <div class="links">
+        <a href="/login">Войти</a>
+    </div>
+
+    {{if .Error}}
+        <div class="error">
+            {{.Error}}
+        </div>
+    {{end}}
+
+    {{if .Success}}
+        <div class="success">
+            {{.Success}}
+        </div>
+    {{end}}
+
+</div>
+
+</body>
+<script>
+document.querySelector("form").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const login = document.querySelector("input[name='login']").value;
+    const password = document.querySelector("input[name='password']").value;
+    const role = document.querySelector("select[name='role']").value;
+
+    const res = await fetch("/api/register", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            login,
+            password,
+            role
+        })
+    });
+
+    if (res.ok) {
+        window.location.href = "/login";
+    } else {
+        alert("Ошибка регистрации");
+    }
+});
+</script>
+</html>
