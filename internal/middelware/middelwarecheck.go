@@ -1,7 +1,6 @@
 package middelware
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -12,7 +11,7 @@ func RoleMiddleware(allowedRoles ...string) func(http.HandlerFunc) http.HandlerF
 		return func(w http.ResponseWriter, r *http.Request) {
 
 			cookie, err := r.Cookie("token")
-			fmt.Println(cookie, err)
+
 			if err != nil {
 				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return
