@@ -12,4 +12,5 @@ func Routes() {
 	http.HandleFunc("/login", handler.LoginShow)
 	http.HandleFunc("/api/login", handler.Login)
 	http.HandleFunc("/index", middelware.RoleMiddleware("client", "seller", "admin")(handler.IndexHandlerShow))
+	http.HandleFunc("/logout", handler.LogoutHandler)
 }

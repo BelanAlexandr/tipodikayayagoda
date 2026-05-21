@@ -8,6 +8,11 @@ import (
 
 const RoleKey string = "role"
 
+type UserContext struct {
+	ID   int
+	Role string
+}
+
 func RoleMiddleware(allowedRoles ...string) func(http.HandlerFunc) http.HandlerFunc {
 
 	return func(next http.HandlerFunc) http.HandlerFunc {
@@ -31,6 +36,7 @@ func RoleMiddleware(allowedRoles ...string) func(http.HandlerFunc) http.HandlerF
 				http.Error(w, "Invalid role", http.StatusForbidden)
 				return
 			}
+			id := int(claims["id"].(float64))
 
 			allowed := false
 			for _, r := range allowedRoles {
@@ -44,8 +50,10 @@ func RoleMiddleware(allowedRoles ...string) func(http.HandlerFunc) http.HandlerF
 				http.Error(w, "Forbidden", http.StatusForbidden)
 				return
 			}
-
-			ctx := context.WithValue(r.Context(), RoleKey, role)
+			var us UserContext
+			us.ID = id
+			us.Role = role
+			ctx := context.WithValue(r.Context(), RoleKey, us)
 			next(w, r.WithContext(ctx))
 		}
 	}
