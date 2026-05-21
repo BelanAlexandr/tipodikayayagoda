@@ -6,6 +6,7 @@ import (
 	"tipodikayayagoda/internal/config"
 	"tipodikayayagoda/internal/repository"
 	"tipodikayayagoda/internal/rout"
+	"tipodikayayagoda/internal/utils"
 	"tipodikayayagoda/pkg/database"
 )
 
@@ -14,6 +15,7 @@ func main() {
 	rout.Routes()
 	cfg := config.LoadConfig()
 	db := database.Conn(cfg)
+	utils.Init(cfg.JwtSecret)
 	repository.Init(db)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {

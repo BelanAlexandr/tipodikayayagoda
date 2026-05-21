@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"net/http"
 	"tipodikayayagoda/internal/service"
@@ -27,13 +28,24 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		Password string `json:"password"`
 	}
 
-	json.NewDecoder(r.Body).Decode(&req)
-	err := service.Login(req.Login, req.Password)
-
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		http.Error(w, "Error logging in user", 500)
+		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
-	http.Redirect(w, r, "/login", 302)
 
+	token, err := service.Login(req.Login, req.Password)
+	fmt.Println(token)
+	if err != nil {
+		http.Error(w, "error logging in user", http.StatusUnauthorized)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:  "token",
+		Value: token,
+		Path:  "/",
+	})
+
+	http.Redirect(w, r, "/index", http.StatusFound)
 }
