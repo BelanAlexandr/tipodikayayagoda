@@ -10,24 +10,52 @@ import (
 )
 
 func AddProductHandlerShow(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value(middelware.UserKey).(middelware.UserContext)
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	tmpl, err := template.ParseFiles("internal/templates/addproduct.html")
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	tmpl.Execute(w, nil)
+
+	data := map[string]any{
+		"Role":   user.Role,
+		"UserID": user.ID,
+	}
+
+	if err := tmpl.Execute(w, data); err != nil {
+		http.Error(w, "template error", http.StatusInternalServerError)
+		return
+	}
 }
 func AddProductHandler(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value(middelware.UserKey).(middelware.UserContext)
+
+	user, ok := r.Context().Value(middelware.UserKey).(middelware.UserContext)
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	var product models.Product
-	err := json.NewDecoder(r.Body).Decode(&product)
-	if err != nil {
+
+	if err := json.NewDecoder(r.Body).Decode(&product); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
+
 		return
 	}
-	err = service.Addproduct(product, user.Role, user.ID)
+
+	err := service.Addproduct(product, user.Role, user.ID)
 	if err != nil {
-		http.Error(w, "error adding product", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "product created",
+	})
 }

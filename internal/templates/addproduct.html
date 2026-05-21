@@ -186,7 +186,7 @@ document.getElementById("productForm").addEventListener("submit", async function
     const message = document.getElementById("message");
 
     try {
-        const res = await fetch("/api/products", {
+        const res = await fetch("/api/addproduct", {
             method: "POST",
             credentials: "include",
             headers: {
@@ -204,7 +204,7 @@ document.getElementById("productForm").addEventListener("submit", async function
             document.getElementById("productForm").reset();
 
             setTimeout(() => {
-                window.location.href = "/";
+                window.location.href = "/index";
             }, 1000);
 
         } else {
@@ -219,7 +219,7 @@ document.getElementById("productForm").addEventListener("submit", async function
 });
 
 function goBack() {
-    window.location.href = "/";
+    window.location.href = "/index";
 }
 </script>
 
