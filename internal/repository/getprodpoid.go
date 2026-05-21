@@ -2,25 +2,27 @@ package repository
 
 import "tipodikayayagoda/internal/models"
 
-func GetProdpoID(role string, userID int) []models.Product {
-	rows, err := db.Query(`
-			SELECT id, name, description, price, count, seller_id
-			FROM products
-			WHERE seller_id = $1
-		`, userID)
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
+func GetProductpoID(id int) models.Product {
 
-	products := []models.Product{}
-	for rows.Next() {
-		var product models.Product
-		err := rows.Scan(&product.ID, &product.Name, &product.Description, &product.Price, &product.Count, &product.SellerID)
-		if err != nil {
-			panic(err)
-		}
-		products = append(products, product)
+	row := db.QueryRow(`
+    SELECT id, name, description, price, count, seller_id
+    FROM products
+    WHERE id = $1
+`, id)
+	var p models.Product
+
+	err := row.Scan(
+		&p.ID,
+		&p.Name,
+		&p.Description,
+		&p.Price,
+		&p.Count,
+		&p.SellerID,
+	)
+	if err != nil {
+		return models.Product{}
 	}
-	return products
+
+	return p
+
 }
