@@ -1,15 +1,17 @@
 package handler
 
 import (
+	"encoding/json"
 	"html/template"
 	"net/http"
 	"tipodikayayagoda/internal/middelware"
+	"tipodikayayagoda/internal/service"
 )
 
 func IndexHandlerShow(w http.ResponseWriter, r *http.Request) {
-	role, ok := r.Context().Value(middelware.RoleKey).(string)
+	user, ok := r.Context().Value(middelware.UserKey).(middelware.UserContext)
 	if !ok {
-		role = "unknown"
+		user.Role = "unknown"
 	}
 
 	tmpl, err := template.ParseFiles("internal/templates/index.html")
@@ -19,10 +21,20 @@ func IndexHandlerShow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl.Execute(w, map[string]any{
-		"Role": role,
+		"Role":   user.Role,
+		"UserID": user.ID,
 	})
 }
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/login", 302)
+	user := r.Context().Value(middelware.UserKey).(middelware.UserContext)
+
+	products, err := service.GetProducts(user.Role, user.ID)
+	if err != nil {
+		http.Error(w, "error", 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(products)
 }

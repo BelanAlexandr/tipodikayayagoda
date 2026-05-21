@@ -6,7 +6,7 @@ import (
 	"tipodikayayagoda/internal/utils"
 )
 
-const RoleKey string = "role"
+const UserKey string = "user"
 
 type UserContext struct {
 	ID   int
@@ -31,16 +31,29 @@ func RoleMiddleware(allowedRoles ...string) func(http.HandlerFunc) http.HandlerF
 				return
 			}
 
-			role, ok := claims["role"].(string)
+			roleVal, ok := claims["role"].(string)
 			if !ok {
 				http.Error(w, "Invalid role", http.StatusForbidden)
 				return
 			}
-			id := int(claims["id"].(float64))
+
+			idVal, ok := claims["id"]
+			if !ok {
+				http.Error(w, "Invalid token (no id)", http.StatusForbidden)
+				return
+			}
+
+			idFloat, ok := idVal.(float64)
+			if !ok {
+				http.Error(w, "Invalid id type", http.StatusForbidden)
+				return
+			}
+
+			id := int(idFloat)
 
 			allowed := false
 			for _, r := range allowedRoles {
-				if role == r {
+				if roleVal == r {
 					allowed = true
 					break
 				}
@@ -50,10 +63,13 @@ func RoleMiddleware(allowedRoles ...string) func(http.HandlerFunc) http.HandlerF
 				http.Error(w, "Forbidden", http.StatusForbidden)
 				return
 			}
-			var us UserContext
-			us.ID = id
-			us.Role = role
-			ctx := context.WithValue(r.Context(), RoleKey, us)
+
+			user := UserContext{
+				ID:   id,
+				Role: roleVal,
+			}
+
+			ctx := context.WithValue(r.Context(), UserKey, user)
 			next(w, r.WithContext(ctx))
 		}
 	}
