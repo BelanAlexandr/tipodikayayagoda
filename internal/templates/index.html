@@ -6,23 +6,99 @@
     <style>
         body {
             margin: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             font-family: Arial, sans-serif;
             background: #f4f4f4;
         }
 
-        h1 {
-            font-size: 32px;
-            color: #333;
+        header {
+            background: #222;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        .role {
+            color: #00c3ff;
+            font-weight: bold;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 15px;
+            margin: 5px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+        }
+
+        .btn:hover {
+            background: #0056b3;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #a71d2a;
+        }
+
+        .card {
+            background: white;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 8px;
         }
     </style>
 </head>
 <body>
 
-    <h1>Вы успешно вошли в систему</h1>
+<header>
+    <div>Dashboard</div>
+    <div>
+        Роль: <span class="role">{{.Role}}</span>
+        <a href="/logout" class="btn btn-danger">Logout</a>
+    </div>
+</header>
+
+<div class="container">
+
+    <h2>Добро пожаловать!</h2>
+
+    <!-- ADMIN + SELLER -->
+    {{if or (eq .Role "seller") (eq .Role "admin")}}
+        <a href="/product/create" class="btn">Добавить товар</a>
+    {{end}}
+
+    <!-- ONLY ADMIN -->
+    {{if eq .Role "admin"}}
+        <a href="/user/create" class="btn">Добавить пользователя</a>
+    {{end}}
+
+    <hr>
+
+    <h3>Товары</h3>
+
+    <div class="card">
+        🛒 Товар 1 — <a href="/product/1">открыть</a>
+    </div>
+
+    <div class="card">
+        🛒 Товар 2 — <a href="/product/2">открыть</a>
+    </div>
+
+    <div class="card">
+        🛒 Товар 3 — <a href="/product/3">открыть</a>
+    </div>
+
+</div>
 
 </body>
 </html>
