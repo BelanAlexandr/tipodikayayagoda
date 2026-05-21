@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"html/template"
 	"net/http"
+	"tipodikayayagoda/internal/middelware"
 	"tipodikayayagoda/internal/service"
 )
 
-func RegisterShow(w http.ResponseWriter, r *http.Request) {
+func AdminRegisterShow(w http.ResponseWriter, r *http.Request) {
 
 	tmpl, err := template.ParseFiles("internal/templates/registr.html")
 	if err != nil {
@@ -16,14 +17,14 @@ func RegisterShow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl.Execute(w, map[string]any{
-		"IsAdmin": "false",
+		"IsAdmin": "true",
 	})
 
 	return
 }
 
-func Register(w http.ResponseWriter, r *http.Request) {
-
+func AdminRegister(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value(middelware.UserKey).(middelware.UserContext)
 	var req struct {
 		Login    string `json:"login"`
 		Password string `json:"password"`
@@ -31,15 +32,12 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewDecoder(r.Body).Decode(&req)
-	if req.Role == "admin" {
-		http.Error(w, "You cannot register as admin", 403)
-		return
-	}
-	err := service.Register(req.Login, req.Password, req.Role, "")
+
+	err := service.Register(req.Login, req.Password, req.Role, user.Role)
 	if err != nil {
 		http.Error(w, "Error registering user", 500)
 		return
 	}
-	http.Redirect(w, r, "/login", 302)
+	http.Redirect(w, r, "/index", 302)
 
 }

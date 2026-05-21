@@ -9,5 +9,8 @@ func GetProducts(role string, userID int) ([]models.Product, error) {
 	if role == "admin" {
 		return repository.GetAllProd(), nil
 	}
+	if role == "client" {
+		return repository.GetAllProd(), nil
+	}
 	return repository.GetProdpoID(role, userID), nil
 }

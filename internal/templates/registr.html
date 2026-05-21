@@ -5,152 +5,179 @@
     <title>Регистрация</title>
 
     <style>
-        input,
-        select,
-        button {
-    width: 100%;
-    margin-top: 12px;
-    padding: 10px;
-    box-sizing: border-box;
-}
-        body {
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
             font-family: Arial, sans-serif;
-            margin: 40px;
+        }
+
+        body {
+            background: #f5f5f5;
             display: flex;
             justify-content: center;
+            padding: 40px;
         }
 
         .container {
             width: 350px;
-        }
-
-        form {
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 10px;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
         }
 
         h2 {
             text-align: center;
+            margin-bottom: 20px;
         }
 
-        input,
-        button {
+        input, select, button {
             width: 100%;
             margin-top: 12px;
             padding: 10px;
-            box-sizing: border-box;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            outline: none;
         }
 
         button {
-            background-color: #4CAF50;
+            background: #4CAF50;
             color: white;
             border: none;
             cursor: pointer;
         }
 
         button:hover {
-            background-color: #45a049;
+            background: #45a049;
         }
 
-        .links {
+        #roleBlock {
+            margin-top: 10px;
+        }
+
+        #error {
+            margin-top: 10px;
+            color: red;
+            text-align: center;
+        }
+
+        .link {
             margin-top: 15px;
-            display: flex;
-            justify-content: space-between;
+            text-align: center;
         }
 
-        .links a {
+        .link a {
             text-decoration: none;
             color: #2196F3;
         }
 
-        .error {
-            margin-top: 10px;
-            color: red;
+        #backBtn {
+            display: none;
+            background: #9e9e9e;
+            margin-top: 12px;
         }
 
-        .success {
-            margin-top: 10px;
-            color: green;
+        #backBtn:hover {
+            background: #757575;
         }
     </style>
 </head>
+
 <body>
 
 <div class="container">
 
     <h2>Регистрация</h2>
 
-    <form>
+    <form id="form">
 
-        <input
-            type="text"
-            name="login"
-            placeholder="Введите логин"
-            required
-        >
+        <input type="text" name="login" placeholder="Логин" required>
 
-        <input
-            type="password"
-            name="password"
-            placeholder="Введите пароль"
-            required
-        >
-            <select name="role" required>
-        <option value="" disabled selected>Выберите роль</option>
-        <option value="client">Клиент</option>
-        <option value="seller">Продавец</option>
-        <option value="admin">Админ</option>
-    </select>
-        <button type="submit">
-            Зарегистрироваться
-        </button>
+        <input type="password" name="password" placeholder="Пароль" required>
 
+        <div id="roleBlock" style="display:none;">
+            <select name="role" id="role">
+                <option value="client">Client</option>
+                <option value="seller">Seller</option>
+                <option value="admin">Admin</option>
+            </select>
+        </div>
+
+        <button type="submit">Создать</button>
+
+        <button type="button" id="backBtn">Назад</button>
     </form>
 
-    <div class="links">
-        <a href="/login">Войти</a>
+    <div id="error"></div>
+
+    <div class="link" id="loginLink">
+        <a href="/login">Уже есть аккаунт?</a>
     </div>
-
-    {{if .Error}}
-        <div class="error">
-            {{.Error}}
-        </div>
-    {{end}}
-
-    {{if .Success}}
-        <div class="success">
-            {{.Success}}
-        </div>
-    {{end}}
 
 </div>
 
-</body>
 <script>
-document.querySelector("form").addEventListener("submit", async function(e) {
+const isAdmin = "{{.IsAdmin}}".trim() === "true";
+
+// ========================
+// UI логика
+// ========================
+let apiUrl = "/api/register"; // default
+
+if (isAdmin) {
+    document.getElementById("roleBlock").style.display = "block";
+    document.getElementById("loginLink").style.display = "none";
+
+    document.getElementById("backBtn").style.display = "block";
+    document.getElementById("backBtn").onclick = () => {
+        window.location.href = "/index";
+    };
+
+    // 👇 админ использует другой API
+    apiUrl = "/api/adduser";
+}
+
+// ========================
+// SUBMIT
+// ========================
+document.getElementById("form").addEventListener("submit", async (e) => {
     e.preventDefault();
+
     const login = document.querySelector("input[name='login']").value;
     const password = document.querySelector("input[name='password']").value;
-    const role = document.querySelector("select[name='role']").value;
 
-    const res = await fetch("/api/register", {
+    let role = "client";
+
+    if (isAdmin) {
+        role = document.getElementById("role").value;
+    }
+
+    const payload = {
+        login,
+        password,
+        role
+    };
+
+    const res = await fetch(apiUrl, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            login,
-            password,
-            role
-        })
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
     });
 
+    const text = await res.text();
+
     if (res.ok) {
-        window.location.href = "/login";
+        if (isAdmin) {
+            window.location.href = "/index";
+        } else {
+            window.location.href = "/login";
+        }
     } else {
-        alert("Ошибка регистрации");
+        document.getElementById("error").innerText = text || "Ошибка регистрации";
     }
 });
 </script>
+
+</body>
 </html>
