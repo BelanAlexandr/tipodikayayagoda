@@ -7,6 +7,17 @@ import (
 
 func GetProdPoID(id int, role string, userID int) models.Product {
 	if role == "admin" {
+
 		return repository.GetProductpoID(id)
 	}
+	if role == "seller" {
+
+		p := repository.GetProductpoID(id)
+		if p.SellerID == userID {
+			return p
+		} else {
+			return models.Product{}
+		}
+	}
+	return repository.GetProductpoID(id)
 }

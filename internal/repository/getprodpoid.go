@@ -1,6 +1,8 @@
 package repository
 
-import "tipodikayayagoda/internal/models"
+import (
+	"tipodikayayagoda/internal/models"
+)
 
 func GetProductpoID(id int) models.Product {
 
@@ -19,6 +21,7 @@ func GetProductpoID(id int) models.Product {
 		&p.Count,
 		&p.SellerID,
 	)
+
 	if err != nil {
 		return models.Product{}
 	}

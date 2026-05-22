@@ -17,5 +17,7 @@ func Routes() {
 	http.HandleFunc("/api/addproduct", middelware.RoleMiddleware("seller", "admin")(handler.AddProductHandler))
 	http.HandleFunc("/adduser", middelware.RoleMiddleware("admin")(handler.AdminRegisterShow))
 	http.HandleFunc("/api/adduser", middelware.RoleMiddleware("admin")(handler.AdminRegister))
+	http.HandleFunc("/product/", middelware.RoleMiddleware("client", "seller", "admin")(handler.ProductShow))
+	http.HandleFunc("/api/product/", middelware.RoleMiddleware("client", "seller", "admin")(handler.Product))
 	http.HandleFunc("/logout", handler.LogoutHandler)
 }
