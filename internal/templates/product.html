@@ -91,6 +91,22 @@
 </div>
 
 <script>
+async function del() {
+    const ok = confirm("Вы уверены, что хотите удалить товар?");
+    if (!ok) return;
+
+    const res = await fetch("/api/product/delete/" + productId, {
+        method: "DELETE",
+        credentials: "include"
+    });
+
+    if (res.ok) {
+        alert("Товар удалён");
+        window.location.href = "/index";
+    } else {
+        alert("Ошибка удаления");
+    }
+}
 const userRole = "{{.Role}}";
 const userId = Number("{{.UserID}}");
 
@@ -149,15 +165,14 @@ function edit() {
      window.location.href = "/addproduct?id=" + productId;
 }
 
-function del() {
-    alert("Удалить товар " + productId);
-}
+
 
 function back() {
     window.location.href = "/index";
 }
 
 loadProduct();
+
 </script>
 
 </body>

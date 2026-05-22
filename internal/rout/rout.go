@@ -20,5 +20,6 @@ func Routes() {
 	http.HandleFunc("/product/", middelware.RoleMiddleware("client", "seller", "admin")(handler.ProductShow))
 	http.HandleFunc("/api/product/", middelware.RoleMiddleware("client", "seller", "admin")(handler.Product))
 	http.HandleFunc("/api/product/edit/", middelware.RoleMiddleware("seller", "admin")(handler.UpdateProductHandler))
+	http.HandleFunc("/api/product/delete/", middelware.RoleMiddleware("admin")(handler.DeleteProductHandler))
 	http.HandleFunc("/logout", handler.LogoutHandler)
 }
