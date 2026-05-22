@@ -217,20 +217,32 @@ async function loadProducts() {
             `;
         }
 
-        div.innerHTML = `
-            <div class="product-title">${p.name}</div>
-            <div class="description">${p.description}</div>
-            <div class="info">
-                💰 ${p.price}$ <br>
-                📦 ${p.count}
-            </div>
+ div.innerHTML = `
+    <img 
+        src="${p.img_url ? p.img_url : '/static/uploads/default.png'}"
+        style="
+            width:100%;
+            height:180px;
+            object-fit:cover;
+            border-radius:10px;
+            margin-bottom:10px;
+        "
+    />
 
-            <a href="/product/${p.id}">Открыть</a>
+    <div class="product-title">${p.name}</div>
+    <div class="description">${p.description}</div>
 
-            <div style="margin-top:10px;">
-                ${buttons}
-            </div>
-        `;
+    <div class="info">
+        💰 ${p.price}$ <br>
+        📦 ${p.count}
+    </div>
+
+    <a href="/product/${p.id}">Открыть</a>
+
+    <div style="margin-top:10px;">
+        ${buttons}
+    </div>
+`;
 
         container.appendChild(div);
     });

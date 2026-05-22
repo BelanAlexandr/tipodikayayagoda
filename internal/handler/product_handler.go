@@ -26,7 +26,6 @@ func Product(w http.ResponseWriter, r *http.Request) {
 
 	user := r.Context().Value(middelware.UserKey).(middelware.UserContext)
 	product := service.GetProdPoID(idd, user.Role, user.ID)
-
 	if err != nil {
 		http.Error(w, "not found", 404)
 		return

@@ -22,5 +22,7 @@ func Routes() {
 	http.HandleFunc("/api/product/edit/", middelware.RoleMiddleware("seller", "admin")(handler.UpdateProductHandler))
 	http.HandleFunc("/api/product/delete/", middelware.RoleMiddleware("admin")(handler.DeleteProductHandler))
 	http.HandleFunc("/api/product/buy/", middelware.RoleMiddleware("client")(handler.BuyProductHandler))
+	http.HandleFunc("/api/uploadimage/", middelware.RoleMiddleware("seller", "admin")(handler.UploadImageHandler))
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 	http.HandleFunc("/logout", handler.LogoutHandler)
 }

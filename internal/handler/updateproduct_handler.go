@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -32,7 +31,6 @@ func UpdateProductHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	product.ID = id
-	fmt.Println("Updating product with ID:", product)
 	err = service.UpdateProd(product, user.ID, user.Role)
 	if err != nil {
 		http.Error(w, err.Error(), 500)

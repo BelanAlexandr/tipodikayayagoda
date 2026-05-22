@@ -43,6 +43,25 @@
             line-height: 1.6;
         }
 
+        .product-image {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            cursor: default;
+        }
+
+        .product-image.editable {
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .product-image.editable:hover {
+            opacity: 0.85;
+            transform: scale(1.01);
+        }
+
         .buttons {
             display: flex;
             gap: 10px;
@@ -61,7 +80,6 @@
         .delete { background: #f44336; color: white; }
         .back { background: #9e9e9e; color: white; }
 
-        /* 🔥 MODAL */
         .modal {
             display: none;
             position: fixed;
@@ -102,13 +120,21 @@
 <body>
 
 <div class="container">
+
+    <img id="productImage"
+         class="product-image"
+         style="display:none;"
+         onerror="this.src='/static/uploads/default.png'" />
+
+    <input type="file" id="imageInput" style="display:none" />
+
     <div class="title" id="title">Загрузка...</div>
     <div class="desc" id="desc"></div>
     <div class="info" id="info"></div>
     <div class="buttons" id="buttons"></div>
 </div>
 
-<!-- 🔥 MODAL BUY -->
+<!-- MODAL -->
 <div class="modal" id="buyModal">
     <div class="modal-content">
         <h3>Покупка товара</h3>
@@ -118,8 +144,8 @@
         <input type="number" id="buyCount" min="1">
 
         <div class="modal-buttons">
-            <button onclick="confirmBuy()" style="background:#4CAF50;color:white;">Купить</button>
-            <button onclick="closeBuy()" style="background:#9e9e9e;color:white;">Назад</button>
+            <button onclick="confirmBuy()" class="buy">Купить</button>
+            <button onclick="closeBuy()" class="back">Назад</button>
         </div>
 
         <p id="buyError" style="color:red;margin-top:10px;"></p>
@@ -128,29 +154,13 @@
 
 <script>
 
-async function del() {
-    const ok = confirm("Вы уверены, что хотите удалить товар?");
-    if (!ok) return;
-
-    const res = await fetch("/api/product/delete/" + productId, {
-        method: "DELETE",
-        credentials: "include"
-    });
-
-    if (res.ok) {
-        alert("Товар удалён");
-        window.location.href = "/index";
-    } else {
-        alert("Ошибка удаления");
-    }
-}
-
 const userRole = "{{.Role}}";
 const userId = Number("{{.UserID}}");
+const productId = window.location.pathname.split("/").filter(Boolean).pop();
 
-const productId = window.location.pathname.split("/").pop();
+let currentProduct = null;
 
-/* 🔥 LOAD PRODUCT */
+/* LOAD PRODUCT */
 async function loadProduct() {
     const res = await fetch("/api/product/" + productId, {
         credentials: "include"
@@ -162,13 +172,29 @@ async function loadProduct() {
     }
 
     const p = await res.json();
+    currentProduct = p;
 
     document.getElementById("title").innerText = p.name;
     document.getElementById("desc").innerText = p.description;
+
     document.getElementById("info").innerHTML = `
         💰 Цена: ${p.price}$ <br>
         📦 Кол-во: ${p.count}
     `;
+
+    const img = document.getElementById("productImage");
+console.log("IMAGE URL:", p.img_url);
+    img.src = (p.img_url && p.img_url !== "")
+        ? p.img_url
+        : "/static/default.png";
+
+    img.style.display = "block";
+
+    /* 👉 разрешаем редактирование картинки */
+    if (userRole === "seller" || userRole === "admin") {
+        img.classList.add("editable");
+        img.onclick = () => document.getElementById("imageInput").click();
+    }
 
     let buttons = "";
 
@@ -183,7 +209,7 @@ async function loadProduct() {
     if (userRole === "admin") {
         buttons += `
             <button class="edit" onclick="edit()">Редактировать</button>
-            <button class="delete" onclick="del()">Удалить</button>
+            <button class="delete" onclick="deleteProduct(${p.id})">Удалить</button>
         `;
     }
 
@@ -192,7 +218,48 @@ async function loadProduct() {
     document.getElementById("buttons").innerHTML = buttons;
 }
 
-/* 🔥 BUY LOGIC */
+/* ===== IMAGE UPLOAD ===== */
+
+document.getElementById("imageInput").addEventListener("change", async function () {
+    const file = this.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const res = await fetch("/api/uploadimage/" + productId, {
+        method: "POST",
+        body: formData,
+        credentials: "include"
+    });
+
+    if (!res.ok) {
+        alert("Ошибка загрузки картинки");
+        return;
+    }
+
+    const data = await res.json();
+
+    /* обновляем товар */
+    const updateRes = await fetch("/api/product/" + productId, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        credentials: "include",
+        body: JSON.stringify({
+            img_url: data.url
+        })
+    });
+
+    if (updateRes.ok) {
+        loadProduct(); // обновляем UI
+    } else {
+        alert("Ошибка обновления товара");
+    }
+});
+
+/* BUY */
 function buy() {
     document.getElementById("buyModal").style.display = "flex";
     document.getElementById("buyCount").value = 1;
@@ -225,14 +292,24 @@ async function confirmBuy() {
         closeBuy();
         loadProduct();
     } else {
-        const err = await res.text();
-        document.getElementById("buyError").innerText = err;
+        document.getElementById("buyError").innerText = await res.text();
     }
 }
 
-/* 🔥 NAV */
+/* NAV */
 function edit() {
     window.location.href = "/addproduct?id=" + productId;
+}
+
+async function deleteProduct(id) {
+    if (!confirm("Удалить товар?")) return;
+
+    await fetch("/api/product/delete/" + id, {
+        method: "DELETE",
+        credentials: "include"
+    });
+
+    window.location.href = "/index";
 }
 
 function back() {

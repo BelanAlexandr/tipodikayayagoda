@@ -23,7 +23,8 @@
 # =========================
 # обычно НЕ добавляют vendor
 vendor/
-
+static/uploads/*
+!static/uploads/.gitkeep
 # =========================
 # IDE / EDITORS
 # =========================
