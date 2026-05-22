@@ -2,13 +2,12 @@ package service
 
 import (
 	"errors"
-	"fmt"
 	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/repository"
 )
 
 func UpdateProd(product models.Product, userID int, role string) error {
-	fmt.Println("Updating product:", product)
+
 	if role == "admin" {
 		if product.SellerID == 0 {
 			return errors.New("seller ID is required for admin")

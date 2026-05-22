@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -23,7 +22,7 @@ func DeleteProductHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid id", 400)
 		return
 	}
-	fmt.Println("Deleting product with ID:", id)
+
 	err = service.DeleteProd(id, user.Role)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
