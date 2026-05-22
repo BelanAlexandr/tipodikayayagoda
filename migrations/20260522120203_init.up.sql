@@ -2,6 +2,8 @@ CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     login VARCHAR(255) UNIQUE NOT NULL,
     pass VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    date DATE NOT NULL,
     role INTEGER NOT NULL
 );
 
