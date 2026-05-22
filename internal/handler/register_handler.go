@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"html/template"
 	"net/http"
+	"strings"
 	"tipodikayayagoda/internal/service"
 )
 
@@ -31,6 +32,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewDecoder(r.Body).Decode(&req)
+	req.Login = strings.TrimSpace(req.Login)
+	req.Password = strings.TrimSpace(req.Password)
 	if req.Role == "admin" {
 		http.Error(w, "You cannot register as admin", 403)
 		return

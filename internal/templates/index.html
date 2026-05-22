@@ -17,22 +17,15 @@
             padding: 30px;
         }
 
-        /* HEADER */
         .header {
             background: white;
             padding: 20px 30px;
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-
             display: flex;
             justify-content: space-between;
             align-items: center;
-
             margin-bottom: 30px;
-        }
-
-        .header-left h2 {
-            margin-bottom: 5px;
         }
 
         .role {
@@ -53,11 +46,6 @@
             padding: 10px 18px;
             border-radius: 8px;
             cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .admin-btn:hover {
-            background: #1976D2;
         }
 
         .logout-btn {
@@ -67,14 +55,8 @@
             padding: 10px 18px;
             border-radius: 8px;
             cursor: pointer;
-            transition: 0.2s;
         }
 
-        .logout-btn:hover {
-            background: #d32f2f;
-        }
-
-        /* PRODUCTS */
         .products-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -86,11 +68,6 @@
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            transition: 0.2s;
-        }
-
-        .card:hover {
-            transform: translateY(-3px);
         }
 
         .product-title {
@@ -101,25 +78,11 @@
 
         .description {
             color: #555;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         .info {
-            margin-bottom: 15px;
-            line-height: 1.6;
-        }
-
-        .card a {
-            text-decoration: none;
-            color: #2196F3;
-            font-weight: bold;
-        }
-
-        .buttons {
-            margin-top: 15px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
+            margin-bottom: 10px;
         }
 
         button {
@@ -127,40 +90,46 @@
             padding: 10px 14px;
             border-radius: 8px;
             cursor: pointer;
-            transition: 0.2s;
         }
 
-        .buy-btn {
-            background: #4CAF50;
-            color: white;
+        .buy-btn { background: #4CAF50; color: white; }
+        .edit-btn { background: #ff9800; color: white; }
+        .delete-btn { background: #f44336; color: white; }
+
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
         }
 
-        .buy-btn:hover {
-            background: #388E3C;
-        }
-
-        .edit-btn {
-            background: #ff9800;
-            color: white;
-        }
-
-        .edit-btn:hover {
-            background: #e68900;
-        }
-
-        .delete-btn {
-            background: #f44336;
-            color: white;
-        }
-
-        .delete-btn:hover {
-            background: #d32f2f;
-        }
-
-        .loading {
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            width: 300px;
             text-align: center;
-            font-size: 18px;
-            color: #777;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
         }
     </style>
 </head>
@@ -168,175 +137,168 @@
 <body>
 
 <div class="header">
-    <div class="header-left">
-        <h2>Главная страница</h2>
+    <div>
+        <h2>Главная</h2>
         <p>Роль: <span class="role">{{.Role}}</span></p>
     </div>
 
-    <div class="header-buttons" id="headerButtons">
-        <button class="logout-btn" onclick="logout()">
-            Выйти
-        </button>
-    </div>
+    <div class="header-buttons" id="headerButtons"></div>
 </div>
 
-<h3 style="margin-bottom: 20px;">Товары</h3>
+<h3 style="margin-bottom:20px;">Товары</h3>
 
-<div id="products" class="loading">Загрузка...</div>
+<div id="products">Загрузка...</div>
+
+<!-- MODAL BUY -->
+<div id="buyModal" class="modal">
+    <div class="modal-content">
+        <h3>Покупка товара</h3>
+
+        <input id="buyCount" type="number" min="1">
+
+        <div class="modal-buttons">
+            <button onclick="confirmBuy()" style="background:#4CAF50;color:white;">Купить</button>
+            <button onclick="closeBuy()" style="background:#9e9e9e;color:white;">Назад</button>
+        </div>
+
+        <p id="buyError" style="color:red;"></p>
+    </div>
+</div>
 
 <script>
 const userRole = "{{.Role}}".trim();
 const userId = Number("{{.UserID}}");
 
-// ADMIN HEADER BUTTONS
+let selectedProductId = null;
+
+/* HEADER */
 let headerButtons = "";
 
-// ADMIN
 if (userRole === "admin") {
-    headerButtons += `
-        <button class="admin-btn" onclick="goToAddUser()">
-            Добавить пользователя
-        </button>
-    `;
+    headerButtons += `<button class="admin-btn" onclick="goToAddUser()">Добавить пользователя</button>`;
 }
 
-// ADMIN + SELLER
 if (userRole === "admin" || userRole === "seller") {
-    headerButtons += `
-        <button class="admin-btn" onclick="goToAddProduct()">
-            Добавить товар
-        </button>
-    `;
+    headerButtons += `<button class="admin-btn" onclick="goToAddProduct()">Добавить товар</button>`;
 }
 
-// LOGOUT for all
-headerButtons += `
-    <button class="logout-btn" onclick="logout()">
-        Выйти
-    </button>
-`;
+headerButtons += `<button class="logout-btn" onclick="logout()">Выйти</button>`;
 
 document.getElementById("headerButtons").innerHTML = headerButtons;
-</script>
 
-<script>
+/* LOAD PRODUCTS */
 async function loadProducts() {
-    try {
-        const res = await fetch("/api/index", {
-            method: "GET",
-            credentials: "include"
-        });
+    const res = await fetch("/api/index", { credentials: "include" });
 
-        if (!res.ok) {
-            document.getElementById("products").innerHTML =
-                "Ошибка загрузки товаров";
-            return;
+    const products = await res.json();
+
+    const container = document.getElementById("products");
+    container.className = "products-grid";
+    container.innerHTML = "";
+
+    products.forEach(p => {
+        const div = document.createElement("div");
+        div.className = "card";
+
+        let buttons = "";
+
+        if (userRole === "client") {
+            buttons += `<button class="buy-btn" onclick="buy(${p.id})">Купить</button>`;
         }
 
-        const products = await res.json();
+        if (userRole === "seller" && p.seller_id == userId) {
+            buttons += `<button class="edit-btn" onclick="editProduct(${p.id})">Изменить</button>`;
+        }
 
-        const container = document.getElementById("products");
-        container.className = "products-grid";
-        container.innerHTML = "";
-
-        products.forEach(p => {
-            const div = document.createElement("div");
-            div.className = "card";
-
-            let buttons = "";
-
-            // CLIENT
-            if (userRole === "client") {
-                buttons += `
-                    <button class="buy-btn" onclick="buyProduct(${p.id})">
-                        Купить
-                    </button>
-                `;
-            }
-
-            // SELLER
-            if (userRole === "seller" && p.seller_id == userId) {
-                buttons += `
-                    <button class="edit-btn" onclick="editProduct(${p.id})">
-                        Изменить 
-                    </button>
-                `;
-            }
-
-            // ADMIN
-            if (userRole === "admin") {
-                buttons += `
-                    <button class="edit-btn" onclick="editProduct(${p.id})">
-                        Изменить
-                    </button>
-
-                    <button class="delete-btn" onclick="deleteProduct(${p.id})">
-                        Удалить
-                    </button>
-                `;
-            }
-
-            div.innerHTML = `
-                <div class="product-title">${p.name}</div>
-
-                <div class="description">
-                    ${p.description}
-                </div>
-
-                <div class="info">
-                    💰 Цена: ${p.price}$ <br>
-                    📦 Кол-во: ${p.count}
-                </div>
-
-                <a href="/product/${p.id}">Открыть товар</a>
-
-                <div class="buttons">
-                    ${buttons}
-                </div>
+        if (userRole === "admin") {
+            buttons += `
+                <button class="edit-btn" onclick="editProduct(${p.id})">Изменить</button>
+                <button class="delete-btn" onclick="deleteProduct(${p.id})">Удалить</button>
             `;
+        }
 
-            container.appendChild(div);
-        });
+        div.innerHTML = `
+            <div class="product-title">${p.name}</div>
+            <div class="description">${p.description}</div>
+            <div class="info">
+                💰 ${p.price}$ <br>
+                📦 ${p.count}
+            </div>
 
-    } catch (err) {
-        document.getElementById("products").innerHTML =
-            "Ошибка сети";
-    }
+            <a href="/product/${p.id}">Открыть</a>
+
+            <div style="margin-top:10px;">
+                ${buttons}
+            </div>
+        `;
+
+        container.appendChild(div);
+    });
 }
 
-// LOGOUT
-async function logout() {
-    const res = await fetch("/logout", {
+/* BUY */
+function buy(id) {
+    selectedProductId = id;
+    document.getElementById("buyModal").style.display = "flex";
+    document.getElementById("buyCount").value = 1;
+    document.getElementById("buyError").innerText = "";
+}
+
+function closeBuy() {
+    document.getElementById("buyModal").style.display = "none";
+}
+
+async function confirmBuy() {
+    const count = parseInt(document.getElementById("buyCount").value);
+
+    if (!count || count <= 0) {
+        document.getElementById("buyError").innerText = "Введите количество";
+        return;
+    }
+
+    const res = await fetch("/api/product/buy/" + selectedProductId, {
         method: "POST",
-        credentials: "include"
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ count })
     });
 
     if (res.ok) {
-        window.location.href = "/login";
+        alert("Покупка успешна");
+        closeBuy();
+        loadProducts();
     } else {
-        alert("Ошибка выхода");
+        document.getElementById("buyError").innerText = await res.text();
     }
 }
 
-// ADMIN NAVIGATION
-function goToAddUser() {
-    window.location.href = "/adduser";
-}
-
+/* NAV */
 function goToAddProduct() {
     window.location.href = "/addproduct";
 }
 
-function buyProduct(id) {
-    alert("Купить товар " + id);
+function goToAddUser() {
+    window.location.href = "/adduser";
 }
 
 function editProduct(id) {
     window.location.href = "/addproduct?id=" + id;
 }
 
-function deleteProduct(id) {
-    alert("Удалить товар " + id);
+async function deleteProduct(id) {
+    if (!confirm("Удалить товар?")) return;
+
+    await fetch("/api/product/delete/" + id, {
+        method: "DELETE",
+        credentials: "include"
+    });
+
+    loadProducts();
+}
+
+async function logout() {
+    await fetch("/logout", { method: "POST", credentials: "include" });
+    window.location.href = "/login";
 }
 
 loadProducts();

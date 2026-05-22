@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"html/template"
 	"net/http"
+	"strings"
 	"tipodikayayagoda/internal/middelware"
 	"tipodikayayagoda/internal/service"
 )
@@ -32,7 +33,8 @@ func AdminRegister(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewDecoder(r.Body).Decode(&req)
-
+	req.Login = strings.TrimSpace(req.Login)
+	req.Password = strings.TrimSpace(req.Password)
 	err := service.Register(req.Login, req.Password, req.Role, user.Role)
 	if err != nil {
 		http.Error(w, "Error registering user", 500)

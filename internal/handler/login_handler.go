@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"html/template"
 	"net/http"
+	"strings"
 	"tipodikayayagoda/internal/service"
 )
 
@@ -32,7 +33,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
-
+	req.Login = strings.TrimSpace(req.Login)
+	req.Password = strings.TrimSpace(req.Password)
 	token, err := service.Login(req.Login, req.Password)
 	if err != nil {
 		http.Error(w, "error logging in user", http.StatusUnauthorized)
