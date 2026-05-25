@@ -158,7 +158,7 @@ const productId = params.get("id");
 const isEdit = productId !== null;
 
 // 👑 показываем seller_id только админу
-if (userRole === "admin") {
+if (userRole === RoleAdmin) {
     document.getElementById("sellerField").style.display = "block";
 }
 
@@ -193,7 +193,7 @@ document.getElementById("productForm").addEventListener("submit", async function
     };
 
     // 👑 admin может назначить seller
-    if (userRole === "admin") {
+    if (userRole === RoleAdmin) {
         product.seller_id = parseInt(document.getElementById("seller_id").value);
     }
 

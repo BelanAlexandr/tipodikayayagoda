@@ -2,7 +2,7 @@ package repository
 
 import "tipodikayayagoda/internal/models"
 
-func GetProdpoID(role string, userID int) []models.Product {
+func GetProdpoID(userID int) []models.Product {
 
 	rows, err := db.Query(`
 			SELECT id, name, description, price, count, seller_id

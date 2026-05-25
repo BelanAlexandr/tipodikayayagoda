@@ -2,11 +2,12 @@ package service
 
 import (
 	"errors"
+	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/repository"
 )
 
-func BuyProduct(productID int, Role string, count int) error {
-	if Role != "client" {
+func BuyProduct(productID int, Role int, count int) error {
+	if Role != models.RoleClient {
 		return errors.New("unauthorized")
 	}
 	pro := repository.GetProductpoID(productID)

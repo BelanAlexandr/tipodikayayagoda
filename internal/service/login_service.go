@@ -18,7 +18,7 @@ func Login(login, password string) (string, error) {
 		return "", fmt.Errorf("invalid password")
 	}
 
-	token, err := utils.GenerateJWT(user.ID, user.Login, user.Role)
+	token, err := utils.GenerateJWT(user.ID, user.Role, user.Login)
 	if err != nil {
 		return "", err
 	}

@@ -11,7 +11,7 @@ import (
 func IndexHandlerShow(w http.ResponseWriter, r *http.Request) {
 	user, ok := r.Context().Value(middelware.UserKey).(middelware.UserContext)
 	if !ok {
-		user.Role = "unknown"
+		user.Role = 0
 	}
 
 	tmpl, err := template.ParseFiles("internal/templates/index.html")

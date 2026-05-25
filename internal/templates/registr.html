@@ -95,7 +95,7 @@
         <input type="text" name="login" placeholder="Логин" required>
 
         <input type="password" name="password" placeholder="Пароль" required>
-
+        <input type="text" name="name" placeholder="Имя" required>
         <div id="roleBlock" style="display:none;">
             <select name="role" id="role">
                 <option value="client">Client</option>
@@ -156,6 +156,7 @@ document.getElementById("form").addEventListener("submit", async (e) => {
     const payload = {
         login,
         password,
+        name: document.querySelector("input[name='name']").value,
         role
     };
 

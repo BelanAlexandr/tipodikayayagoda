@@ -5,12 +5,12 @@ import (
 	"tipodikayayagoda/internal/repository"
 )
 
-func GetProducts(role string, userID int) ([]models.Product, error) {
-	if role == "admin" {
+func GetProducts(role int, userID int) ([]models.Product, error) {
+	if role == models.RoleAdmin {
 		return repository.GetAllProd(), nil
 	}
-	if role == "client" {
+	if role == models.RoleClient {
 		return repository.GetAllProd(), nil
 	}
-	return repository.GetProdpoID(role, userID), nil
+	return repository.GetProdpoID(userID), nil
 }

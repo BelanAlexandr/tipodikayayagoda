@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"net/http"
 	"strings"
@@ -38,6 +39,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	token, err := service.Login(req.Login, req.Password)
 	if err != nil {
 		http.Error(w, "error logging in user", http.StatusUnauthorized)
+		fmt.Println("Login error:", err)
 		return
 	}
 

@@ -11,7 +11,7 @@ var Jwtkey []byte
 func Init(key string) {
 	Jwtkey = []byte(key)
 }
-func GenerateJWT(id int, login, role string) (string, error) {
+func GenerateJWT(id, role int, login string) (string, error) {
 
 	claims := jwt.MapClaims{
 		"id":    id,

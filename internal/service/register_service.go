@@ -1,18 +1,23 @@
 package service
 
 import (
+	"time"
+	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/repository"
 	"tipodikayayagoda/internal/utils"
 )
 
-func Register(login, password, role, userrole string) error {
-	hash, err := utils.HashPassword(password)
-
+func Register(user models.User, userrole int) error {
+	hash, err := utils.HashPassword(user.Password)
+	user.Password = hash
+	ti := time.Now()
 	if err != nil {
 		return err
 	}
-	if userrole != "admin" {
-		return repository.Register(login, hash, "client")
+	if userrole != models.RoleAdmin {
+		user.Role = models.RoleClient
+		return repository.Register(user, ti)
 	}
-	return repository.Register(login, hash, role)
+
+	return repository.Register(user, ti)
 }

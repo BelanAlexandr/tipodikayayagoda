@@ -5,9 +5,9 @@ import (
 	"tipodikayayagoda/internal/repository"
 )
 
-func GetProdPoID(id int, role string, userID int) models.Product {
+func GetProdPoID(id int, role int, userID int) models.Product {
 
-	if role == "seller" {
+	if role == models.RoleSeller {
 
 		p := repository.GetProductpoID(id)
 		if p.SellerID == userID {

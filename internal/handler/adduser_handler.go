@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"tipodikayayagoda/internal/middelware"
+	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/service"
 )
 
@@ -26,16 +27,13 @@ func AdminRegisterShow(w http.ResponseWriter, r *http.Request) {
 
 func AdminRegister(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value(middelware.UserKey).(middelware.UserContext)
-	var req struct {
-		Login    string `json:"login"`
-		Password string `json:"password"`
-		Role     string `json:"role"`
-	}
+	var req models.User
 
 	json.NewDecoder(r.Body).Decode(&req)
 	req.Login = strings.TrimSpace(req.Login)
 	req.Password = strings.TrimSpace(req.Password)
-	err := service.Register(req.Login, req.Password, req.Role, user.Role)
+
+	err := service.Register(req, user.Role)
 	if err != nil {
 		http.Error(w, "Error registering user", 500)
 		return
