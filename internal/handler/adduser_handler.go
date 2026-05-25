@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"net/http"
 	"strings"
@@ -32,7 +33,7 @@ func AdminRegister(w http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(r.Body).Decode(&req)
 	req.Login = strings.TrimSpace(req.Login)
 	req.Password = strings.TrimSpace(req.Password)
-
+	fmt.Println("Registering user:", user)
 	err := service.Register(req, user.Role)
 	if err != nil {
 		http.Error(w, "Error registering user", 500)

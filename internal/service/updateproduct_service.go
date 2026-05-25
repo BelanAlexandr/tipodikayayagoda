@@ -8,6 +8,13 @@ import (
 
 func UpdateProd(product models.Product, userID, role int) error {
 
+	if product.ImageURL == "" {
+		existingProduct := repository.GetProductpoID(product.ID)
+		if existingProduct.ID == 0 {
+			return errors.New("product not found")
+		}
+		product.ImageURL = existingProduct.ImageURL
+	}
 	if role == models.RoleAdmin {
 		if product.SellerID == 0 {
 			return errors.New("seller ID is required for admin")

@@ -3,6 +3,7 @@ CREATE TABLE users (
     login VARCHAR(255) UNIQUE NOT NULL,
     pass VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
+    secondname VARCHAR(255) NOT NULL,
     date DATE NOT NULL,
     role INTEGER NOT NULL
 );
