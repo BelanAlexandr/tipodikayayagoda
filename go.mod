@@ -1,6 +1,6 @@
 module tipodikayayagoda
 
-go 1.26.3
+go 1.25.0
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
@@ -8,3 +8,5 @@ require (
 	github.com/lib/pq v1.12.3
 	golang.org/x/crypto v0.51.0
 )
+
+require github.com/golang-migrate/migrate/v4 v4.19.1

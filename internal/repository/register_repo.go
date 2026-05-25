@@ -17,7 +17,7 @@ func Register(user models.User, createdAt time.Time) error {
 	if exists {
 		return fmt.Errorf("user with login %s already exists", user.Login)
 	}
-	fmt.Println("Registering user:", user)
+
 	_, err = db.Exec(
 		"INSERT INTO users(login,pass,name,secondname,role,date) VALUES($1, $2,$3, $4, $5,$6)",
 		user.Login,
