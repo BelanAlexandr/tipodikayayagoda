@@ -18,6 +18,12 @@ func Register(user models.User, userrole int) error {
 		user.Role = models.RoleClient
 		return repository.Register(user, ti)
 	}
-
+	if user.Role == 1 {
+		user.Role = models.RoleClient
+	} else if user.Role == 2 {
+		user.Role = models.RoleSeller
+	} else if user.Role == 3 {
+		user.Role = models.RoleAdmin
+	}
 	return repository.Register(user, ti)
 }

@@ -49,7 +49,6 @@
             object-fit: cover;
             border-radius: 12px;
             margin-bottom: 15px;
-            cursor: default;
         }
 
         .product-image.editable {
@@ -121,12 +120,8 @@
 
 <div class="container">
 
-    <img id="productImage"
-         class="product-image"
-         style="display:none;"
-         onerror="this.src='/static/uploads/default.png'" />
-
-    <input type="file" id="imageInput" style="display:none" />
+    <img id="productImage" class="product-image" style="display:none;">
+    <input type="file" id="imageInput" style="display:none">
 
     <div class="title" id="title">Загрузка...</div>
     <div class="desc" id="desc"></div>
@@ -138,8 +133,6 @@
 <div class="modal" id="buyModal">
     <div class="modal-content">
         <h3>Покупка товара</h3>
-
-        <p>Введите количество</p>
 
         <input type="number" id="buyCount" min="1">
 
@@ -154,11 +147,18 @@
 
 <script>
 
-const userRole = "{{.Role}}";
 const userId = Number("{{.UserID}}");
+
+/* ===== FLAGS ===== */
+const isAdmin = "{{.IsAdmin}}".trim() === "true";
+const isSeller = "{{.IsSeller}}".trim() === "true";
+const canBuy = "{{.CanBuy}}".trim() === "true";
+
 const productId = window.location.pathname.split("/").filter(Boolean).pop();
 
-let currentProduct = null;
+function el(id) {
+    return document.getElementById(id);
+}
 
 /* LOAD PRODUCT */
 async function loadProduct() {
@@ -172,41 +172,39 @@ async function loadProduct() {
     }
 
     const p = await res.json();
-    currentProduct = p;
 
-    document.getElementById("title").innerText = p.name;
-    document.getElementById("desc").innerText = p.description;
+    el("title").innerText = p.name || "";
+    el("desc").innerText = p.description || "";
 
-    document.getElementById("info").innerHTML = `
-        💰 Цена: ${p.price}$ <br>
-        📦 Кол-во: ${p.count}
+    el("info").innerHTML = `
+        💰 Цена: ${p.price || 0}$ <br>
+        📦 Кол-во: ${p.count || 0}
     `;
 
-    const img = document.getElementById("productImage");
-console.log("IMAGE URL:", p.img_url);
+    const img = el("productImage");
     img.src = (p.img_url && p.img_url !== "")
         ? p.img_url
-        : "/static/default.png";
+        : "/static/uploads/default.png";
 
     img.style.display = "block";
 
-    /* 👉 разрешаем редактирование картинки */
-    if (userRole === "seller" || userRole === "admin") {
+    /* IMAGE EDIT */
+    if (isAdmin || isSeller) {
         img.classList.add("editable");
-        img.onclick = () => document.getElementById("imageInput").click();
+        img.onclick = () => el("imageInput").click();
     }
 
     let buttons = "";
 
-    if (userRole === "client") {
+    if (canBuy) {
         buttons += `<button class="buy" onclick="buy()">Купить</button>`;
     }
 
-    if (userRole === "seller" && p.seller_id == userId) {
+    if (isSeller && p.seller_id == userId) {
         buttons += `<button class="edit" onclick="edit()">Редактировать</button>`;
     }
 
-    if (userRole === "admin") {
+    if (isAdmin) {
         buttons += `
             <button class="edit" onclick="edit()">Редактировать</button>
             <button class="delete" onclick="deleteProduct(${p.id})">Удалить</button>
@@ -215,12 +213,11 @@ console.log("IMAGE URL:", p.img_url);
 
     buttons += `<button class="back" onclick="back()">Назад</button>`;
 
-    document.getElementById("buttons").innerHTML = buttons;
+    el("buttons").innerHTML = buttons;
 }
 
-/* ===== IMAGE UPLOAD ===== */
-
-document.getElementById("imageInput").addEventListener("change", async function () {
+/* IMAGE UPLOAD */
+el("imageInput").addEventListener("change", async function () {
     const file = this.files[0];
     if (!file) return;
 
@@ -240,50 +237,39 @@ document.getElementById("imageInput").addEventListener("change", async function 
 
     const data = await res.json();
 
-    /* обновляем товар */
-    const updateRes = await fetch("/api/product/" + productId, {
+    await fetch("/api/product/" + productId, {
         method: "PUT",
-        headers: {
-            "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({
-            img_url: data.url
-        })
+        body: JSON.stringify({ img_url: data.url })
     });
 
-    if (updateRes.ok) {
-        loadProduct(); // обновляем UI
-    } else {
-        alert("Ошибка обновления товара");
-    }
+    loadProduct();
 });
 
 /* BUY */
 function buy() {
-    document.getElementById("buyModal").style.display = "flex";
-    document.getElementById("buyCount").value = 1;
-    document.getElementById("buyError").innerText = "";
+    el("buyModal").style.display = "flex";
+    el("buyCount").value = 1;
+    el("buyError").innerText = "";
 }
 
 function closeBuy() {
-    document.getElementById("buyModal").style.display = "none";
+    el("buyModal").style.display = "none";
 }
 
 async function confirmBuy() {
-    const count = parseInt(document.getElementById("buyCount").value);
+    const count = parseInt(el("buyCount").value);
 
     if (!count || count <= 0) {
-        document.getElementById("buyError").innerText = "Введите корректное количество";
+        el("buyError").innerText = "Введите корректное количество";
         return;
     }
 
     const res = await fetch("/api/product/buy/" + productId, {
         method: "POST",
         credentials: "include",
-        headers: {
-            "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ count })
     });
 
@@ -292,7 +278,7 @@ async function confirmBuy() {
         closeBuy();
         loadProduct();
     } else {
-        document.getElementById("buyError").innerText = await res.text();
+        el("buyError").innerText = await res.text();
     }
 }
 

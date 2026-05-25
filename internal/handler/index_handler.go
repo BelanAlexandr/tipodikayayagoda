@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"tipodikayayagoda/internal/middelware"
+	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/service"
 )
 
@@ -21,8 +22,12 @@ func IndexHandlerShow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl.Execute(w, map[string]any{
-		"Role":   user.Role,
-		"UserID": user.ID,
+		"UserID":        user.ID,
+		"IsAdmin":       user.Role == models.RoleAdmin,
+		"IsSeller":      user.Role == models.RoleSeller,
+		"CanBuy":        user.Role == models.RoleClient,
+		"CanAddUser":    user.Role == models.RoleAdmin,
+		"CanAddProduct": user.Role == models.RoleAdmin || user.Role == models.RoleSeller,
 	})
 }
 

@@ -134,7 +134,7 @@
             <input type="number" id="count" min="1" required>
         </div>
 
-        <!-- 👑 только для admin -->
+        <!-- только admin -->
         <div class="form-group" id="sellerField" style="display:none;">
             <label>Seller ID</label>
             <input type="number" id="seller_id" min="1">
@@ -150,24 +150,27 @@
 </div>
 
 <script>
-const userRole = "{{.Role}}".trim();
+const userId = Number("{{.UserID}}");
 
-// id из URL (?id=5)
+/* ===== BOOLEAN FLAGS (как в registration/index) ===== */
+const isAdmin = "{{.IsAdmin}}".trim() === "true";
+const isSeller = "{{.IsSeller}}".trim() === "true";
+
+/* id из URL */
 const params = new URLSearchParams(window.location.search);
 const productId = params.get("id");
 const isEdit = productId !== null;
 
-// 👑 показываем seller_id только админу
-if (userRole === RoleAdmin) {
+/* 👑 seller_id только для admin */
+if (isAdmin) {
     document.getElementById("sellerField").style.display = "block";
 }
 
-// UI переключение
+/* UI edit mode */
 if (isEdit) {
     document.getElementById("title").innerText = "Редактировать товар";
     document.getElementById("submitBtn").innerText = "Сохранить";
 
-    // загрузка товара
     fetch("/api/product/" + productId, {
         credentials: "include"
     })
@@ -176,12 +179,15 @@ if (isEdit) {
         document.getElementById("name").value = p.name;
         document.getElementById("description").value = p.description;
         document.getElementById("price").value = p.price;
-        document.getElementById("count").value = p.count
-        document.getElementById("seller_id").value = p.seller_id;
+        document.getElementById("count").value = p.count;
+
+        if (isAdmin) {
+            document.getElementById("seller_id").value = p.seller_id;
+        }
     });
 }
 
-// submit
+/* SUBMIT */
 document.getElementById("productForm").addEventListener("submit", async function(e) {
     e.preventDefault();
 
@@ -192,9 +198,8 @@ document.getElementById("productForm").addEventListener("submit", async function
         count: parseInt(document.getElementById("count").value)
     };
 
-    // 👑 admin может назначить seller
-    if (userRole === RoleAdmin) {
-        product.seller_id = parseInt(document.getElementById("seller_id").value);
+    if (isAdmin) {
+        product.seller_id = Number(document.getElementById("seller_id").value);
     }
 
     let url = "/api/addproduct";
@@ -229,6 +234,7 @@ document.getElementById("productForm").addEventListener("submit", async function
     }
 });
 
+/* BACK */
 function goBack() {
     if (isEdit) {
         window.location.href = "/product/" + productId;

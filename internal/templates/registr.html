@@ -98,9 +98,9 @@
         <input type="text" name="name" placeholder="Имя" required>
         <div id="roleBlock" style="display:none;">
             <select name="role" id="role">
-                <option value="client">Client</option>
-                <option value="seller">Seller</option>
-                <option value="admin">Admin</option>
+                <option value="1">Client</option>
+                <option value="2">Seller</option>
+                <option value="3">Admin</option>
             </select>
         </div>
 
@@ -123,7 +123,7 @@ const isAdmin = "{{.IsAdmin}}".trim() === "true";
 // ========================
 // UI логика
 // ========================
-let apiUrl = "/api/register"; // default
+let apiUrl = "/api/register";
 
 if (isAdmin) {
     document.getElementById("roleBlock").style.display = "block";
@@ -134,7 +134,6 @@ if (isAdmin) {
         window.location.href = "/index";
     };
 
-    // 👇 админ использует другой API
     apiUrl = "/api/adduser";
 }
 
@@ -146,17 +145,18 @@ document.getElementById("form").addEventListener("submit", async (e) => {
 
     const login = document.querySelector("input[name='login']").value;
     const password = document.querySelector("input[name='password']").value;
+    const name = document.querySelector("input[name='name']").value;
 
-    let role = "client";
+    let role = 1; // default = client
 
     if (isAdmin) {
-        role = document.getElementById("role").value;
+        role = Number(document.getElementById("role").value);
     }
 
     const payload = {
         login,
         password,
-        name: document.querySelector("input[name='name']").value,
+        name,
         role
     };
 
