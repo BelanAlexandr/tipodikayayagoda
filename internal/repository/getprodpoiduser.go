@@ -9,7 +9,6 @@ import (
 func GetProdpoID(userID int, search string, limit int, offset int, sort string, categoryID int) ([]models.Product, int) {
 	var imgURL sql.NullString
 	var desc sql.NullString
-	search = "%" + search + "%"
 
 	var totalCount int
 
@@ -17,7 +16,7 @@ func GetProdpoID(userID int, search string, limit int, offset int, sort string, 
 		SELECT COUNT(*) 
 		FROM products 
 		WHERE seller_id = $1 
-		  AND ($2 = '%%' OR name ILIKE $2 OR description ILIKE $2)
+		  AND ($2 = '' OR to_tsvector('russian', name || ' ' || COALESCE(description, '')) @@ plainto_tsquery('russian', $2))
 		  AND ($3 = 0 OR category_id = $3)
 	`
 	err := db.QueryRow(countQuery, userID, search, categoryID).Scan(&totalCount)
@@ -37,7 +36,7 @@ func GetProdpoID(userID int, search string, limit int, offset int, sort string, 
 		SELECT id, name, description, price, count, seller_id, img_url, category_id
 		FROM products
 		WHERE seller_id = $1 
-		  AND ($2 = '%%' OR name ILIKE $2 OR description ILIKE $2)
+		  AND ($2 = '' OR to_tsvector('russian', name || ' ' || COALESCE(description, '')) @@ plainto_tsquery('russian', $2))
 		  AND ($3 = 0 OR category_id = $3)
 		ORDER BY %s
 		LIMIT $4 OFFSET $5
@@ -52,6 +51,7 @@ func GetProdpoID(userID int, search string, limit int, offset int, sort string, 
 	var products []models.Product
 	for rows.Next() {
 		var product models.Product
+
 		err := rows.Scan(
 			&product.ID,
 			&product.Name,
