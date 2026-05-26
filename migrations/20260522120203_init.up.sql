@@ -27,8 +27,6 @@ CREATE TABLE products (
 );
 CREATE TABLE notifications (
     id SERIAL PRIMARY KEY,
-    -- REFERENCES users(id) ON DELETE CASCADE означает: если пользователя удалят, 
-    -- вся история его уведомлений сотрется автоматически, не ломая базу данных.
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     text TEXT NOT NULL,
     is_read BOOLEAN NOT NULL DEFAULT FALSE,

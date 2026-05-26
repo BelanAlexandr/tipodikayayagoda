@@ -10,10 +10,8 @@ func GetAllProd(search string, limit int, offset int, sort string, categoryID in
 	var imgURL sql.NullString
 	var desc sql.NullString
 
-	// ВАЖНО: Убрали ручную склейку с "%", передаем чистую строку!
-
 	var totalCount int
-	// Используем @@ и plainto_tsquery
+
 	countQuery := `
 		SELECT COUNT(*) 
 		FROM products 
@@ -33,7 +31,6 @@ func GetAllProd(search string, limit int, offset int, sort string, categoryID in
 		orderBy = "price DESC"
 	}
 
-	// Точно так же меняем dataQuery
 	dataQuery := fmt.Sprintf(`
 		SELECT id, name, description, price, count, seller_id, img_url, category_id
 		FROM products
