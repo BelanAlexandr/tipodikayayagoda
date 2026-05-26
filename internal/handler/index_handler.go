@@ -68,7 +68,6 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		Products:   products,
 		TotalCount: totalCount,
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }

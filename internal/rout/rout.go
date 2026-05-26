@@ -27,6 +27,12 @@ func Routes() {
 	http.HandleFunc("/api/categories", middelware.RoleMiddleware(models.RoleAdmin, models.RoleSeller)(handler.CategoriesListHandler))
 	http.HandleFunc("/api/category/add", middelware.RoleMiddleware(models.RoleAdmin)(handler.AddCategoryHandler))
 	http.HandleFunc("/api/sellers", middelware.RoleMiddleware(models.RoleAdmin)(handler.GetSeller))
+
+	// Роуты уведомлений
+	http.HandleFunc("/api/notifications/list", middelware.RoleMiddleware(models.RoleClient, models.RoleSeller, models.RoleAdmin)(handler.GetNotificationsList))
+	http.HandleFunc("/api/notifications/read/", middelware.RoleMiddleware(models.RoleClient, models.RoleSeller, models.RoleAdmin)(handler.MarkSingleNotificationRead))
+	http.HandleFunc("/ws", middelware.RoleMiddleware(models.RoleAdmin, models.RoleClient, models.RoleSeller)(handler.WebConn))
+
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 	http.HandleFunc("/logout", handler.LogoutHandler)
 }

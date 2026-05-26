@@ -1,4 +1,6 @@
-DROP TABLE IF EXISTS users;
+DROP INDEX IF EXISTS idx_notifications_user_unread;
+DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS products;
-DROP TABLE IF EXISTS roledictionary;
+DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS roledictionary;

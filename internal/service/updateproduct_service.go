@@ -9,7 +9,7 @@ import (
 func UpdateProd(product models.Product, userID, role int) error {
 
 	if product.ImageURL == "" {
-		existingProduct := repository.GetProductpoID(product.ID)
+		existingProduct := repository.GetProductpoIID(product.ID)
 		if existingProduct.ID == 0 {
 			return errors.New("product not found")
 		}

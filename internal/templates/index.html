@@ -166,15 +166,99 @@
             color: #999;
             cursor: not-allowed;
         }
+
+        /* ===== СТИЛИ КОЛОКОЛЬЧИКА УВЕДОМЛЕНИЙ ===== */
+        .notification-bell-container {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        #bell-icon {
+            font-size: 26px;
+            transition: transform 0.2s ease;
+        }
+
+        #bell-icon:hover {
+            transform: scale(1.1);
+        }
+
+        #notifications-dropdown {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 40px;
+            width: 320px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border: 1px solid #e0e0e0;
+            max-height: 350px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .dropdown-header {
+            padding: 12px 15px;
+            font-weight: bold;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+            color: #333;
+            text-align: left;
+        }
+
+        .notification-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f9f9f9;
+            font-size: 13px;
+            line-height: 1.4;
+            color: #444;
+            transition: background 0.2s ease;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .notification-item:hover {
+            background: #f5f5f5;
+        }
+
+        .notification-item.unread {
+            background: #f0f7ff;
+        }
+
+        .notification-item.unread:hover {
+            background: #e2f0ff;
+        }
+
+        .empty-notifications {
+            padding: 20px;
+            color: #999;
+            text-align: center;
+            font-size: 13px;
+        }
     </style>
 </head>
 
 <body>
 
 <div class="header">
-    <div>
+    <div style="display: flex; align-items: center; gap: 20px;">
         <h2>Главная</h2>
-    </div>
+        
+        <div class="notification-bell-container" id="bellContainer">
+            <span id="bell-icon">🔔</span>
+
+            <div id="notifications-dropdown">
+                <div class="dropdown-header">
+                    <span>Уведомления</span>
+                </div>
+                <div id="notifications-list">
+                    <div class="empty-notifications">Нет новых уведомлений</div>
+                </div>
+            </div>
+        </div>
+        </div>
 
     <div class="header-buttons" id="headerButtons"></div>
 </div>
@@ -237,7 +321,7 @@ let selectedProductId = null;
 
 /* ===== ПЕРЕМЕННЫЕ ПАГИНАЦИИ ===== */
 let currentPage = 1;
-const limit = 6; // Количество товаров на одной странице
+const limit = 6; 
 
 /* HEADER */
 let headerButtons = "";
@@ -258,13 +342,11 @@ headerButtons += `<button class="logout-btn" onclick="logout()">Выйти</butt
 
 document.getElementById("headerButtons").innerHTML = headerButtons;
 
-// Функция для поиска (сбрасывает на 1 страницу)
 function searchProducts() {
     currentPage = 1;
     loadProducts();
 }
 
-// Загрузка и рендер списка категорий в фильтр
 async function loadCategories() {
     try {
         const res = await fetch("/api/categories");
@@ -288,7 +370,6 @@ async function loadCategories() {
     }
 }
 
-// Запрос на добавление новой категории (доступно админу)
 async function addCategoryPrompt() {
     const name = prompt("Введите название новой категории:");
     if (!name || name.trim() === "") return;
@@ -313,7 +394,6 @@ async function loadProducts() {
     const sort = document.getElementById("sortInput").value; 
     const category = document.getElementById("categoryInput").value; 
 
-    // Добавляем параметры в URL
     const url = `/api/index?search=${encodeURIComponent(search)}&page=${currentPage}&limit=${limit}&sort=${sort}&category=${category}`;
 
     try {
@@ -402,7 +482,6 @@ async function loadProducts() {
     }
 }
 
-/* ОТРИСОВКА КНОПОК ПАГИНАЦИИ */
 function renderPagination(totalCount, currentLength) {
     const paginationContainer = document.getElementById("pagination");
     paginationContainer.innerHTML = "";
@@ -444,7 +523,6 @@ function appendPageButton(text, targetPage, isDisabled, isActive = false) {
     document.getElementById("pagination").appendChild(btn);
 }
 
-/* BUY */
 function buy(id) {
     selectedProductId = id;
     document.getElementById("buyModal").style.display = "flex";
@@ -480,7 +558,6 @@ async function confirmBuy() {
     }
 }
 
-/* NAV */
 function goToAddProduct() {
     window.location.href = "/addproduct";
 }
@@ -513,10 +590,9 @@ async function logout() {
     window.location.href = "/login";
 }
 
-// Инициализация страницы
 loadCategories();
 loadProducts();
 </script>
-
+<script src="/static/js/websocket.js"></script>
 </body>
 </html>

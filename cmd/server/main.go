@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"tipodikayayagoda/internal/config"
+	"tipodikayayagoda/internal/handler"
 	"tipodikayayagoda/internal/repository"
 	"tipodikayayagoda/internal/rout"
 	"tipodikayayagoda/internal/utils"
@@ -11,6 +12,7 @@ import (
 )
 
 func main() {
+	handler.GlobalHub = handler.NewHub()
 	fmt.Println("Starting server at port 8080")
 	rout.Routes()
 	cfg := config.LoadConfig()

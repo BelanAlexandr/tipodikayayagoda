@@ -36,7 +36,7 @@ func BuyProductHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-
+	go Message(user.ID)
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "bought",
 	})

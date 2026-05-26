@@ -25,3 +25,13 @@ CREATE TABLE products (
     seller_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT
 );
+CREATE TABLE notifications (
+    id SERIAL PRIMARY KEY,
+    -- REFERENCES users(id) ON DELETE CASCADE означает: если пользователя удалят, 
+    -- вся история его уведомлений сотрется автоматически, не ломая базу данных.
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    text TEXT NOT NULL,
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX idx_notifications_user_unread ON notifications (user_id, is_read);
