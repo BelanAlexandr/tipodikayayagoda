@@ -20,8 +20,6 @@ func RegisterShow(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, map[string]any{
 		"IsAdmin": "false",
 	})
-
-	return
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {

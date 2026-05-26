@@ -18,8 +18,6 @@ func LoginShow(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl.Execute(w, nil)
-
-	return
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
