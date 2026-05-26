@@ -130,6 +130,42 @@
         .modal-buttons button {
             flex: 1;
         }
+
+        /* ===== СТИЛИ ПАГИНАЦИИ ===== */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 40px;
+        }
+
+        .pagination-btn {
+            background: white;
+            color: #333;
+            border: 1px solid #ccc;
+            padding: 8px 14px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #f0f0f0;
+            border-color: #999;
+        }
+
+        .pagination-btn.active {
+            background: #2196F3;
+            color: white;
+            border-color: #2196F3;
+            font-weight: bold;
+        }
+
+        .pagination-btn:disabled {
+            background: #e0e0e0;
+            color: #999;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 
@@ -145,9 +181,29 @@
 
 <h3 style="margin-bottom:20px;">Товары</h3>
 
+<div style="margin-bottom:20px; display: flex; gap: 10px; align-items: center;">
+    <input 
+        type="text"
+        id="searchInput"
+        placeholder="Поиск товара..."
+        style="padding:10px; width:300px; border:1px solid #ccc; border-radius:8px;"
+    >
+    
+    <select id="sortInput" onchange="searchProducts()" style="padding:10px; border:1px solid #ccc; border-radius:8px; background: white; cursor: pointer;">
+        <option value="new">Сначала новинки</option>
+        <option value="price_asc">💰 По возрастанию цены</option>
+        <option value="price_desc">💰 По убыванию цены</option>
+    </select>
+
+    <button onclick="searchProducts()" style="background:#2196F3; color:white;">
+        Найти
+    </button>
+</div>
+
 <div id="products">Загрузка...</div>
 
-<!-- MODAL BUY -->
+<div id="pagination" class="pagination-container"></div>
+
 <div id="buyModal" class="modal">
     <div class="modal-content">
         <h3>Покупка товара</h3>
@@ -166,7 +222,7 @@
 <script>
 const userId = Number("{{.UserID}}");
 
-/* ===== FLAGS (как в твоей регистрации) ===== */
+/* ===== FLAGS ===== */
 const isAdmin = "{{.IsAdmin}}".trim() === "true";
 const isSeller = "{{.IsSeller}}".trim() === "true";
 const canBuy = "{{.CanBuy}}".trim() === "true";
@@ -174,6 +230,10 @@ const canAddUser = "{{.CanAddUser}}".trim() === "true";
 const canAddProduct = "{{.CanAddProduct}}".trim() === "true";
 
 let selectedProductId = null;
+
+/* ===== ПЕРЕМЕННЫЕ ПАГИНАЦИИ ===== */
+let currentPage = 1;
+const limit = 6; // Количество товаров на одной странице (можешь изменить)
 
 /* HEADER */
 let headerButtons = "";
@@ -190,68 +250,162 @@ headerButtons += `<button class="logout-btn" onclick="logout()">Выйти</butt
 
 document.getElementById("headerButtons").innerHTML = headerButtons;
 
-/* LOAD PRODUCTS */
+// Функция для поиска (сбрасывает на 1 страницу)
+function searchProducts() {
+    currentPage = 1;
+    loadProducts();
+}
+
 async function loadProducts() {
-    const res = await fetch("/api/index", { credentials: "include" });
+    const search = document.getElementById("searchInput").value;
+    const sort = document.getElementById("sortInput").value; // Получаем тип сортировки
 
-    const products = await res.json();
+    // Добавляем параметр &sort= в URL
+    const url = `/api/index?search=${encodeURIComponent(search)}&page=${currentPage}&limit=${limit}&sort=${sort}`;
 
-    const container = document.getElementById("products");
-    container.className = "products-grid";
-    container.innerHTML = "";
+    // ... весь остальной код функции loadProducts остается прежним ...
 
-    products.forEach(p => {
-        const div = document.createElement("div");
-        div.className = "card";
+    try {
+        const res = await fetch(url, { credentials: "include" });
+        const data = await res.json();
 
-        let buttons = "";
+        // Проверяем формат ответа бэкенда.
+        // Идеально, если бэкенд возвращает объект: { products: [...], totalCount: 50 }
+        // Если бэкенд возвращает просто массив продуктов, пагинация будет "слепой" (только Вперед/Назад)
+        let products = [];
+        let totalCount = 0;
 
-        if (canBuy) {
-            buttons += `<button class="buy-btn" onclick="buy(${p.id})">Купить</button>`;
+        if (Array.isArray(data)) {
+            products = data;
+            // Если бэкенд не прислал totalCount, мы не знаем точное число страниц
+            totalCount = null; 
+        } else if (data && Array.isArray(data.products)) {
+            products = data.products;
+            totalCount = data.totalCount;
         }
 
-        if (isSeller && p.seller_id == userId) {
-            buttons += `
-                <button class="edit-btn" onclick="editProduct(${p.id})">Изменить</button>
+        const container = document.getElementById("products");
+        
+        if (products.length === 0) {
+            container.className = "";
+            container.innerHTML = "Товары не найдены.";
+            document.getElementById("pagination").innerHTML = "";
+            return;
+        }
+
+        container.className = "products-grid";
+        container.innerHTML = "";
+
+        products.forEach(p => {
+            const div = document.createElement("div");
+            div.className = "card";
+
+            let buttons = "";
+
+            if (canBuy) {
+                buttons += `<button class="buy-btn" onclick="buy(${p.id})">Купить</button>`;
+            }
+
+            if (isSeller && p.seller_id == userId) {
+                buttons += `<button class="edit-btn" onclick="editProduct(${p.id})">Изменить</button>`;
+            }
+
+            if (isAdmin) {
+                buttons += `
+                    <button class="edit-btn" onclick="editProduct(${p.id})">Изменить</button>
+                    <button class="delete-btn" onclick="deleteProduct(${p.id})">Удалить</button>
+                `;
+            }
+
+            div.innerHTML = `
+                <img 
+                    src="${p.img_url ? p.img_url : '/static/uploads/default.png?v=' + Date.now()}"
+                    style="
+                        width:100%;
+                        height:180px;
+                        object-fit:cover;
+                        border-radius:10px;
+                        margin-bottom:10px;
+                    "
+                />
+
+                <div class="product-title">${p.name}</div>
+                <div class="description">${p.description}</div>
+
+                <div class="info">
+                    💰 ${p.price}$ <br>
+                    📦 ${p.count}
+                </div>
+
+                <a href="/product/${p.id}">Открыть</a>
+
+                <div style="margin-top:10px;">
+                    ${buttons}
+                </div>
             `;
+
+            container.appendChild(div);
+        });
+
+        // Отрисовка кнопок переключения страниц
+        renderPagination(totalCount, products.length);
+
+    } catch (err) {
+        console.error("Ошибка загрузки товаров:", err);
+        document.getElementById("products").innerText = "Ошибка загрузки данных.";
+    }
+}
+
+/* ОТРИСОВКА КНОПОК ПАГИНАЦИИ */
+function renderPagination(totalCount, currentLength) {
+    const paginationContainer = document.getElementById("pagination");
+    paginationContainer.innerHTML = "";
+
+    // Вариант 1: Бэкенд возвращает правильную структуру с totalCount
+    if (totalCount !== null) {
+        const totalPages = Math.ceil(totalCount / limit);
+        if (totalPages <= 1) return; // Если страница всего одна, пагинацию не выводим
+
+        // Кнопка "Назад"
+        appendPageButton("«", currentPage - 1, currentPage === 1);
+
+        // Цифровые кнопки страниц
+        for (let i = 1; i <= totalPages; i++) {
+            appendPageButton(i, i, false, i === currentPage);
         }
 
-        if (isAdmin) {
-            buttons += `
-                <button class="edit-btn" onclick="editProduct(${p.id})">Изменить</button>
-                <button class="delete-btn" onclick="deleteProduct(${p.id})">Удалить</button>
-            `;
-        }
+        // Кнопка "Вперед"
+        appendPageButton("»", currentPage + 1, currentPage === totalPages);
+    } 
+    // Вариант 2: "Слепая пагинация", если бэкенд возвращает только массив
+    else {
+        // Показываем пагинацию, только если мы не на 1 странице или массив полный
+        if (currentPage === 1 && currentLength < limit) return;
 
-        div.innerHTML = `
-            <img 
-                src="${p.img_url ? p.img_url : '/static/uploads/default.png?v=' + Date.now()}"
-                style="
-                    width:100%;
-                    height:180px;
-                    object-fit:cover;
-                    border-radius:10px;
-                    margin-bottom:10px;
-                "
-            />
+        appendPageButton("Назад", currentPage - 1, currentPage === 1);
+        
+        // Кнопка индикатора текущей страницы
+        appendPageButton(currentPage, currentPage, false, true); 
+        
+        // Если вернулось максимальное кол-во элементов, возможно, есть следующая страница
+        appendPageButton("Вперед", currentPage + 1, currentLength < limit);
+    }
+}
 
-            <div class="product-title">${p.name}</div>
-            <div class="description">${p.description}</div>
-
-            <div class="info">
-                💰 ${p.price}$ <br>
-                📦 ${p.count}
-            </div>
-
-            <a href="/product/${p.id}">Открыть</a>
-
-            <div style="margin-top:10px;">
-                ${buttons}
-            </div>
-        `;
-
-        container.appendChild(div);
-    });
+function appendPageButton(text, targetPage, isDisabled, isActive = false) {
+    const btn = document.createElement("button");
+    btn.className = "pagination-btn";
+    if (isActive) btn.classList.add("active");
+    btn.innerText = text;
+    btn.disabled = isDisabled;
+    
+    btn.onclick = () => {
+        currentPage = targetPage;
+        loadProducts();
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // Плавный скролл вверх при смене страницы
+    };
+    
+    document.getElementById("pagination").appendChild(btn);
 }
 
 /* BUY */

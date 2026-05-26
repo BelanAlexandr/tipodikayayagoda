@@ -2,20 +2,51 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"tipodikayayagoda/internal/models"
 )
 
-func GetAllProd() []models.Product {
+func GetAllProd(search string, limit int, offset int, sort string) ([]models.Product, int) {
 	var imgURL sql.NullString
 	var desc sql.NullString
-	res, err := db.Query("select * from products")
+	search = "%" + search + "%"
+
+	var totalCount int
+	countQuery := `
+		SELECT COUNT(*) 
+		FROM products 
+		WHERE $1 = '%%' OR name ILIKE $1 OR description ILIKE $1
+	`
+	err := db.QueryRow(countQuery, search).Scan(&totalCount)
 	if err != nil {
 		panic(err)
 	}
+
+	orderBy := "id DESC"
+	switch sort {
+	case "price_asc":
+		orderBy = "price ASC"
+	case "price_desc":
+		orderBy = "price DESC"
+	}
+
+	dataQuery := fmt.Sprintf(`
+		SELECT id, name, description, price, count, seller_id, img_url
+		FROM products
+		WHERE $1 = '%%' OR name ILIKE $1 OR description ILIKE $1
+		ORDER BY %s
+		LIMIT $2 OFFSET $3
+	`, orderBy)
+
+	rows, err := db.Query(dataQuery, search, limit, offset)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
 	var products []models.Product
-	for res.Next() {
+	for rows.Next() {
 		var product models.Product
-		err := res.Scan(&product.ID, &product.Name, &desc, &product.Price, &product.Count, &product.SellerID, &imgURL)
+		err := rows.Scan(&product.ID, &product.Name, &desc, &product.Price, &product.Count, &product.SellerID, &imgURL)
 		if err != nil {
 			panic(err)
 		}
@@ -23,9 +54,11 @@ func GetAllProd() []models.Product {
 			product.Description = desc.String
 		}
 		if imgURL.Valid {
+
 			product.ImageURL = imgURL.String
 		}
 		products = append(products, product)
 	}
-	return products
+
+	return products, totalCount
 }

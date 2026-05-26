@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"html/template"
 	"net/http"
+	"strconv"
 	"tipodikayayagoda/internal/middelware"
 	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/service"
@@ -31,15 +32,38 @@ func IndexHandlerShow(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+type ProductsResponse struct {
+	Products   []models.Product `json:"products"`
+	TotalCount int              `json:"totalCount"`
+}
+
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value(middelware.UserKey).(middelware.UserContext)
 
-	products, err := service.GetProducts(user.Role, user.ID)
+	search := r.URL.Query().Get("search")
+	sort := r.URL.Query().Get("sort") // Получаем параметр сортировки (new, price_asc, price_desc)
+
+	page, err := strconv.Atoi(r.URL.Query().Get("page"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil || limit < 1 {
+		limit = 6
+	}
+
+	products, totalCount, err := service.GetProducts(user.Role, user.ID, search, page, limit, sort)
 	if err != nil {
-		http.Error(w, "error", 500)
+		http.Error(w, "error loading products", 500)
 		return
 	}
 
+	response := ProductsResponse{
+		Products:   products,
+		TotalCount: totalCount,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(products)
+	json.NewEncoder(w).Encode(response)
 }
