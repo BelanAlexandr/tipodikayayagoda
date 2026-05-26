@@ -6,23 +6,25 @@ import (
 	"tipodikayayagoda/internal/models"
 )
 
-func GetProdpoID(userID int, search string, limit int, offset int, sort string) ([]models.Product, int) {
+func GetProdpoID(userID int, search string, limit int, offset int, sort string, categoryID int) ([]models.Product, int) {
 	var imgURL sql.NullString
 	var desc sql.NullString
 	search = "%" + search + "%"
 
 	var totalCount int
+
 	countQuery := `
 		SELECT COUNT(*) 
 		FROM products 
-		WHERE seller_id = $1 AND ($2 = '%%' OR name ILIKE $2 OR description ILIKE $2)
+		WHERE seller_id = $1 
+		  AND ($2 = '%%' OR name ILIKE $2 OR description ILIKE $2)
+		  AND ($3 = 0 OR category_id = $3)
 	`
-	err := db.QueryRow(countQuery, userID, search).Scan(&totalCount)
+	err := db.QueryRow(countQuery, userID, search, categoryID).Scan(&totalCount)
 	if err != nil {
 		panic(err)
 	}
 
-	// Определяем сортировку
 	orderBy := "id DESC"
 	switch sort {
 	case "price_asc":
@@ -32,14 +34,16 @@ func GetProdpoID(userID int, search string, limit int, offset int, sort string) 
 	}
 
 	dataQuery := fmt.Sprintf(`
-		SELECT id, name, description, price, count, seller_id, img_url
+		SELECT id, name, description, price, count, seller_id, img_url, category_id
 		FROM products
-		WHERE seller_id = $1 AND ($2 = '%%' OR name ILIKE $2 OR description ILIKE $2)
+		WHERE seller_id = $1 
+		  AND ($2 = '%%' OR name ILIKE $2 OR description ILIKE $2)
+		  AND ($3 = 0 OR category_id = $3)
 		ORDER BY %s
-		LIMIT $3 OFFSET $4
+		LIMIT $4 OFFSET $5
 	`, orderBy)
 
-	rows, err := db.Query(dataQuery, userID, search, limit, offset)
+	rows, err := db.Query(dataQuery, userID, search, categoryID, limit, offset)
 	if err != nil {
 		panic(err)
 	}
@@ -48,7 +52,16 @@ func GetProdpoID(userID int, search string, limit int, offset int, sort string) 
 	var products []models.Product
 	for rows.Next() {
 		var product models.Product
-		err := rows.Scan(&product.ID, &product.Name, &desc, &product.Price, &product.Count, &product.SellerID, &imgURL)
+		err := rows.Scan(
+			&product.ID,
+			&product.Name,
+			&desc,
+			&product.Price,
+			&product.Count,
+			&product.SellerID,
+			&imgURL,
+			&product.Category_id,
+		)
 		if err != nil {
 			panic(err)
 		}

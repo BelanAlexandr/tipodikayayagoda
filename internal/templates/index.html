@@ -181,13 +181,17 @@
 
 <h3 style="margin-bottom:20px;">Товары</h3>
 
-<div style="margin-bottom:20px; display: flex; gap: 10px; align-items: center;">
+<div style="margin-bottom:20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
     <input 
         type="text"
         id="searchInput"
         placeholder="Поиск товара..."
-        style="padding:10px; width:300px; border:1px solid #ccc; border-radius:8px;"
+        style="padding:10px; width:250px; border:1px solid #ccc; border-radius:8px;"
     >
+    
+    <select id="categoryInput" onchange="searchProducts()" style="padding:10px; border:1px solid #ccc; border-radius:8px; background: white; cursor: pointer;">
+        <option value="0">Все категории</option>
+    </select>
     
     <select id="sortInput" onchange="searchProducts()" style="padding:10px; border:1px solid #ccc; border-radius:8px; background: white; cursor: pointer;">
         <option value="new">Сначала новинки</option>
@@ -233,7 +237,7 @@ let selectedProductId = null;
 
 /* ===== ПЕРЕМЕННЫЕ ПАГИНАЦИИ ===== */
 let currentPage = 1;
-const limit = 6; // Количество товаров на одной странице (можешь изменить)
+const limit = 6; // Количество товаров на одной странице
 
 /* HEADER */
 let headerButtons = "";
@@ -246,6 +250,10 @@ if (canAddProduct) {
     headerButtons += `<button class="admin-btn" onclick="goToAddProduct()">Добавить товар</button>`;
 }
 
+if (isAdmin) {
+    headerButtons += `<button class="admin-btn" style="background:#9c27b0;" onclick="addCategoryPrompt()">Создать категорию</button>`;
+}
+
 headerButtons += `<button class="logout-btn" onclick="logout()">Выйти</button>`;
 
 document.getElementById("headerButtons").innerHTML = headerButtons;
@@ -256,28 +264,67 @@ function searchProducts() {
     loadProducts();
 }
 
+// Загрузка и рендер списка категорий в фильтр
+async function loadCategories() {
+    try {
+        const res = await fetch("/api/categories");
+        const categories = await res.json();
+        
+        const select = document.getElementById("categoryInput");
+        if (!select) return;
+        
+        select.innerHTML = '<option value="0">Все категории</option>';
+        
+        if (Array.isArray(categories)) {
+            categories.forEach(cat => {
+                const opt = document.createElement("option");
+                opt.value = cat.id;
+                opt.innerText = cat.name;
+                select.appendChild(opt);
+            });
+        }
+    } catch (err) {
+        console.error("Ошибка загрузки категорий:", err);
+    }
+}
+
+// Запрос на добавление новой категории (доступно админу)
+async function addCategoryPrompt() {
+    const name = prompt("Введите название новой категории:");
+    if (!name || name.trim() === "") return;
+
+    const res = await fetch("/api/category/add", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim() })
+    });
+
+    if (res.ok) {
+        alert("Категория успешно добавлена!");
+        loadCategories(); 
+    } else {
+        alert("Ошибка при добавлении: " + await res.text());
+    }
+}
+
 async function loadProducts() {
     const search = document.getElementById("searchInput").value;
-    const sort = document.getElementById("sortInput").value; // Получаем тип сортировки
+    const sort = document.getElementById("sortInput").value; 
+    const category = document.getElementById("categoryInput").value; 
 
-    // Добавляем параметр &sort= в URL
-    const url = `/api/index?search=${encodeURIComponent(search)}&page=${currentPage}&limit=${limit}&sort=${sort}`;
-
-    // ... весь остальной код функции loadProducts остается прежним ...
+    // Добавляем параметры в URL
+    const url = `/api/index?search=${encodeURIComponent(search)}&page=${currentPage}&limit=${limit}&sort=${sort}&category=${category}`;
 
     try {
         const res = await fetch(url, { credentials: "include" });
         const data = await res.json();
 
-        // Проверяем формат ответа бэкенда.
-        // Идеально, если бэкенд возвращает объект: { products: [...], totalCount: 50 }
-        // Если бэкенд возвращает просто массив продуктов, пагинация будет "слепой" (только Вперед/Назад)
         let products = [];
         let totalCount = 0;
 
         if (Array.isArray(data)) {
             products = data;
-            // Если бэкенд не прислал totalCount, мы не знаем точное число страниц
             totalCount = null; 
         } else if (data && Array.isArray(data.products)) {
             products = data.products;
@@ -347,7 +394,6 @@ async function loadProducts() {
             container.appendChild(div);
         });
 
-        // Отрисовка кнопок переключения страниц
         renderPagination(totalCount, products.length);
 
     } catch (err) {
@@ -361,33 +407,23 @@ function renderPagination(totalCount, currentLength) {
     const paginationContainer = document.getElementById("pagination");
     paginationContainer.innerHTML = "";
 
-    // Вариант 1: Бэкенд возвращает правильную структуру с totalCount
     if (totalCount !== null) {
         const totalPages = Math.ceil(totalCount / limit);
-        if (totalPages <= 1) return; // Если страница всего одна, пагинацию не выводим
+        if (totalPages <= 1) return; 
 
-        // Кнопка "Назад"
         appendPageButton("«", currentPage - 1, currentPage === 1);
 
-        // Цифровые кнопки страниц
         for (let i = 1; i <= totalPages; i++) {
             appendPageButton(i, i, false, i === currentPage);
         }
 
-        // Кнопка "Вперед"
         appendPageButton("»", currentPage + 1, currentPage === totalPages);
     } 
-    // Вариант 2: "Слепая пагинация", если бэкенд возвращает только массив
     else {
-        // Показываем пагинацию, только если мы не на 1 странице или массив полный
         if (currentPage === 1 && currentLength < limit) return;
 
         appendPageButton("Назад", currentPage - 1, currentPage === 1);
-        
-        // Кнопка индикатора текущей страницы
         appendPageButton(currentPage, currentPage, false, true); 
-        
-        // Если вернулось максимальное кол-во элементов, возможно, есть следующая страница
         appendPageButton("Вперед", currentPage + 1, currentLength < limit);
     }
 }
@@ -402,7 +438,7 @@ function appendPageButton(text, targetPage, isDisabled, isActive = false) {
     btn.onclick = () => {
         currentPage = targetPage;
         loadProducts();
-        window.scrollTo({ top: 0, behavior: 'smooth' }); // Плавный скролл вверх при смене страницы
+        window.scrollTo({ top: 0, behavior: 'smooth' }); 
     };
     
     document.getElementById("pagination").appendChild(btn);
@@ -477,6 +513,8 @@ async function logout() {
     window.location.href = "/login";
 }
 
+// Инициализация страницы
+loadCategories();
 loadProducts();
 </script>
 

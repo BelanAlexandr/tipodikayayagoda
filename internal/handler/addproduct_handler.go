@@ -34,8 +34,8 @@ func AddProductHandlerShow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
-func AddProductHandler(w http.ResponseWriter, r *http.Request) {
 
+func AddProductHandler(w http.ResponseWriter, r *http.Request) {
 	user, ok := r.Context().Value(middelware.UserKey).(middelware.UserContext)
 	if !ok {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
@@ -46,7 +46,11 @@ func AddProductHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&product); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
 
+	if product.Category_id <= 0 {
+		http.Error(w, "category_id is required and must be greater than 0", http.StatusBadRequest)
 		return
 	}
 

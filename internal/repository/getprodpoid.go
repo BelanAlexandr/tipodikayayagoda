@@ -24,6 +24,7 @@ func GetProductpoID(id int) models.Product {
 		&p.Count,
 		&p.SellerID,
 		&imgURL,
+		&p.Category_id,
 	)
 
 	if err != nil {

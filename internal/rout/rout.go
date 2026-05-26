@@ -24,6 +24,8 @@ func Routes() {
 	http.HandleFunc("/api/product/delete/", middelware.RoleMiddleware(models.RoleAdmin)(handler.DeleteProductHandler))
 	http.HandleFunc("/api/product/buy/", middelware.RoleMiddleware(models.RoleClient)(handler.BuyProductHandler))
 	http.HandleFunc("/api/uploadimage/", middelware.RoleMiddleware(models.RoleSeller, models.RoleAdmin)(handler.UploadImageHandler))
+	http.HandleFunc("/api/categories", middelware.RoleMiddleware(models.RoleAdmin, models.RoleSeller)(handler.CategoriesListHandler))
+	http.HandleFunc("/api/category/add", middelware.RoleMiddleware(models.RoleAdmin)(handler.AddCategoryHandler))
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 	http.HandleFunc("/logout", handler.LogoutHandler)
 }

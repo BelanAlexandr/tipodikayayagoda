@@ -41,7 +41,12 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value(middelware.UserKey).(middelware.UserContext)
 
 	search := r.URL.Query().Get("search")
-	sort := r.URL.Query().Get("sort") // Получаем параметр сортировки (new, price_asc, price_desc)
+	sort := r.URL.Query().Get("sort")
+
+	categoryID, err := strconv.Atoi(r.URL.Query().Get("category"))
+	if err != nil || categoryID < 0 {
+		categoryID = 0
+	}
 
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
 	if err != nil || page < 1 {
@@ -53,7 +58,7 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
 		limit = 6
 	}
 
-	products, totalCount, err := service.GetProducts(user.Role, user.ID, search, page, limit, sort)
+	products, totalCount, err := service.GetProducts(user.Role, user.ID, search, page, limit, sort, categoryID)
 	if err != nil {
 		http.Error(w, "error loading products", 500)
 		return

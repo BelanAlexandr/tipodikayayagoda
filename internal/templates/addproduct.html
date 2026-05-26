@@ -44,6 +44,7 @@
         }
 
         input,
+        select,
         textarea {
             width: 100%;
             padding: 12px;
@@ -53,12 +54,18 @@
             font-size: 14px;
         }
 
+        select {
+            background: white;
+            cursor: pointer;
+        }
+
         textarea {
             resize: vertical;
             min-height: 100px;
         }
 
         input:focus,
+        select:focus,
         textarea:focus {
             border-color: #2196F3;
         }
@@ -120,6 +127,13 @@
         </div>
 
         <div class="form-group">
+            <label>Категория товара</label>
+            <select id="category_id" required>
+                <option value="">Загрузка категорий...</option>
+            </select>
+        </div>
+
+        <div class="form-group">
             <label>Описание</label>
             <textarea id="description" required></textarea>
         </div>
@@ -134,7 +148,6 @@
             <input type="number" id="count" min="1" required>
         </div>
 
-        <!-- только admin -->
         <div class="form-group" id="sellerField" style="display:none;">
             <label>Seller ID</label>
             <input type="number" id="seller_id" min="1">
@@ -152,7 +165,7 @@
 <script>
 const userId = Number("{{.UserID}}");
 
-/* ===== BOOLEAN FLAGS (как в registration/index) ===== */
+/* ===== BOOLEAN FLAGS ===== */
 const isAdmin = "{{.IsAdmin}}".trim() === "true";
 const isSeller = "{{.IsSeller}}".trim() === "true";
 
@@ -166,25 +179,63 @@ if (isAdmin) {
     document.getElementById("sellerField").style.display = "block";
 }
 
-/* UI edit mode */
-if (isEdit) {
-    document.getElementById("title").innerText = "Редактировать товар";
-    document.getElementById("submitBtn").innerText = "Сохранить";
-
-    fetch("/api/product/" + productId, {
-        credentials: "include"
-    })
-    .then(res => res.json())
-    .then(p => {
-        document.getElementById("name").value = p.name;
-        document.getElementById("description").value = p.description;
-        document.getElementById("price").value = p.price;
-        document.getElementById("count").value = p.count;
-
-        if (isAdmin) {
-            document.getElementById("seller_id").value = p.seller_id;
+// Загрузка доступных категорий из API бэкенда
+async function loadCategories() {
+    try {
+        const res = await fetch("/api/categories");
+        const categories = await res.json();
+        const select = document.getElementById("category_id");
+        
+        if (categories.length === 0) {
+            select.innerHTML = '<option value="">Сначала админ должен создать категории!</option>';
+            return null;
         }
-    });
+        
+        select.innerHTML = '<option value="">-- Выберите категорию --</option>';
+        categories.forEach(cat => {
+            const opt = document.createElement("option");
+            opt.value = cat.id;
+            opt.innerText = cat.name;
+            select.appendChild(opt);
+        });
+        return true;
+    } catch (err) {
+        console.error("Ошибка при получении категорий:", err);
+        document.getElementById("category_id").innerHTML = '<option value="">Ошибка загрузки категорий</option>';
+        return null;
+    }
+}
+
+// Инициализация формы добавления/редактирования
+async function initForm() {
+    // 1. Сначала дожидаемся полной загрузки селекта категорий
+    const categoriesLoaded = await loadCategories();
+    
+    // 2. Если это режим редактирования, запрашиваем данные товара и заполняем поля
+    if (isEdit && categoriesLoaded) {
+        document.getElementById("title").innerText = "Редактировать товар";
+        document.getElementById("submitBtn").innerText = "Сохранить";
+
+        fetch("/api/product/" + productId, {
+            credentials: "include"
+        })
+        .then(res => res.json())
+        .then(p => {
+            document.getElementById("name").value = p.name;
+            document.getElementById("description").value = p.description;
+            document.getElementById("price").value = p.price;
+            document.getElementById("count").value = p.count;
+            
+            // Автоматически выбираем категорию, к которой привязан товар
+            if (p.category_id) {
+                document.getElementById("category_id").value = p.category_id;
+            }
+
+            if (isAdmin) {
+                document.getElementById("seller_id").value = p.seller_id;
+            }
+        });
+    }
 }
 
 /* SUBMIT */
@@ -193,6 +244,7 @@ document.getElementById("productForm").addEventListener("submit", async function
 
     const product = {
         name: document.getElementById("name").value.trim(),
+        category_id: Number(document.getElementById("category_id").value), // Передаем ID категории числом
         description: document.getElementById("description").value.trim(),
         price: parseFloat(document.getElementById("price").value),
         count: parseInt(document.getElementById("count").value)
@@ -242,6 +294,9 @@ function goBack() {
         window.location.href = "/index";
     }
 }
+
+// Запуск инициализации страницы
+initForm();
 </script>
 
 </body>
