@@ -7,7 +7,7 @@ import (
 )
 
 func GetSeller(w http.ResponseWriter, r *http.Request) {
-	sellers, err := service.GetSellerId() // или service.GetSellers()
+	sellers, err := service.GetSellerId()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
