@@ -5,7 +5,7 @@ import (
 	"tipodikayayagoda/internal/repository"
 )
 
-func GetProducts(role int, userID int, search string, page int, limit int, sort string, category int) ([]models.Product, int, error) {
+func GetProducts(role int, userID int, search string, page int, limit int, sort string, category int) ([]models.ProductCard, int, error) {
 
 	offset := (page - 1) * limit
 

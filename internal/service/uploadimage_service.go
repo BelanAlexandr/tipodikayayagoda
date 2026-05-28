@@ -23,7 +23,6 @@ func UploadImage(id int, file multipart.File, header *multipart.FileHeader) (str
 		parts := strings.Split(oldURL, "/")
 		if len(parts) > 0 {
 			oldObjectName := parts[len(parts)-1]
-			// Удаляем старый объект из бакета MinIO
 			_ = storage.MinioClient.RemoveObject(ctx, storage.BucketName, oldObjectName, minio.RemoveObjectOptions{})
 		}
 	}

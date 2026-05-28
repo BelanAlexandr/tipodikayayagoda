@@ -6,18 +6,29 @@ import (
 	"tipodikayayagoda/internal/repository"
 )
 
-func Addproduct(product models.Product, role int, userID int) error {
+func Addproduct(name, desc string, categoryID int, price float64, count int, reqSellerID int, role int, userID int) error {
 	if role == models.RoleAdmin {
-		if product.SellerID == 0 {
+		if reqSellerID == 0 {
 			return errors.New("seller ID is required for admin")
 		}
-		if !repository.SellerCheck(product.SellerID) {
+		if !repository.SellerCheck(reqSellerID) {
 			return errors.New("invalid seller ID")
 		}
-		return repository.Addproduct(product)
 	} else if role == models.RoleSeller {
-		product.SellerID = userID
-		return repository.Addproduct(product)
+		reqSellerID = userID
+	} else {
+		return errors.New("invalid user role")
 	}
-	return errors.New("invalid user role")
+	product := models.Product{
+		Name:        name,
+		Description: desc,
+		Category_id: categoryID,
+		ImgURL:      "",
+	}
+	offer := models.ProductOffer{
+		SellerID: reqSellerID,
+		Price:    price,
+		Count:    count,
+	}
+	return repository.Addproduct(product, offer)
 }

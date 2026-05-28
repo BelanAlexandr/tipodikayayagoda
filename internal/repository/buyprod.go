@@ -1,7 +1,16 @@
 package repository
 
-func BuyProduct(productID, count int) error {
-	_, err := db.Exec("UPDATE products SET count = count - $2 WHERE id = $1 AND count >= $2", productID, count)
+func BuyProduct(productID, sellerID, count int) error {
+	query := `
+		UPDATE product_offers 
+		SET count = count - $1 
+		WHERE product_id = $2 AND seller_id = $3 AND count >= $1;
+	`
 
-	return err
+	_, err := db.Exec(query, count, productID, sellerID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

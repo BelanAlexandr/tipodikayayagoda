@@ -100,20 +100,23 @@
             background: rgba(0,0,0,0.5);
             justify-content: center;
             align-items: center;
+            z-index: 2000;
         }
 
         .modal-content {
             background: white;
             padding: 20px;
             border-radius: 12px;
-            width: 300px;
+            width: 320px;
             text-align: center;
         }
 
-        .modal-content input {
+        .modal-content input, .modal-content select {
             width: 100%;
             padding: 10px;
             margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
         }
 
         .modal-buttons {
@@ -123,6 +126,26 @@
 
         .modal-buttons button {
             flex: 1;
+        }
+
+        /* Таблица предложений */
+        .offers-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            margin-bottom: 25px;
+            font-size: 14px;
+        }
+
+        .offers-table th, .offers-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .offers-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
         }
 
         /* ===== СТИЛИ КОЛОКОЛЬЧИКА УВЕДОМЛЕНИЙ ===== */
@@ -230,6 +253,10 @@
     <div class="modal-content">
         <h3>Покупка товара</h3>
 
+        <label style="display:block; text-align:left; margin-top:10px; font-size:14px; font-weight:bold;">Продавец:</label>
+        <select id="buySellerId"></select>
+
+        <label style="display:block; text-align:left; font-size:14px; font-weight:bold;">Количество:</label>
         <input type="number" id="buyCount" min="1">
 
         <div class="modal-buttons">
@@ -252,6 +279,8 @@ const canBuy = "{{.CanBuy}}".trim() === "true";
 
 const productId = window.location.pathname.split("/").filter(Boolean).pop();
 
+let currentProductOffers = []; // Локальное хранилище предложений
+
 function el(id) {
     return document.getElementById(id);
 }
@@ -268,19 +297,61 @@ async function loadProduct() {
     }
 
     const p = await res.json();
+    currentProductOffers = p.offers || [];
 
     el("title").innerText = p.name || "";
     el("desc").innerText = p.description || "";
 
-    el("info").innerHTML = `
-        💰 Цена: ${p.price || 0}$ <br>
-        📦 Кол-во: ${p.count || 0}
-    `;
+    // Логика построения контента в зависимости от роли
+    let infoHTML = "";
+    let hasSellerOffer = false;
+
+    if (isSeller) {
+        // Продавец видит именно свои показатели цены и остатков
+        const myOffer = currentProductOffers.find(o => o.seller_id === userId);
+        if (myOffer) {
+            hasSellerOffer = true;
+            infoHTML = `
+                💰 **Ваша цена**: ${myOffer.price}$ <br>
+                📦 **Ваш остаток**: ${myOffer.count} шт.
+            `;
+        } else {
+            infoHTML = `<span style="color: #ff9800;">Вы еще не добавили свое предложение цен к этому товару.</span>`;
+        }
+    } else {
+        // Покупатели и админы видят общую таблицу всех доступных продавцов
+        if (currentProductOffers.length > 0) {
+            infoHTML = `<strong>Доступные предложения:</strong><table class="offers-table">
+                <thead>
+                    <tr>
+                        <th>Продавец</th>
+                        <th>Цена</th>
+                        <th>В наличии</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+            
+            currentProductOffers.forEach(o => {
+                infoHTML += `
+                    <tr>
+                        <td>${o.seller_name || 'Продавец #' + o.seller_id}</td>
+                        <td>${o.price}$</td>
+                        <td>${o.count} шт.</td>
+                    </tr>
+                `;
+            });
+            infoHTML += `</tbody></table>`;
+        } else {
+            infoHTML = `<span style="color: red;">Товара нет в наличии у продавцов.</span>`;
+        }
+    }
+
+    el("info").innerHTML = infoHTML;
 
     const img = el("productImage");
     img.src = (p.img_url && p.img_url !== "")
         ? p.img_url
-        : "/static/uploads/default.png";
+        : "http://localhost:9000/images/default.png";
 
     img.style.display = "block";
 
@@ -292,11 +363,12 @@ async function loadProduct() {
 
     let buttons = "";
 
-    if (canBuy) {
+    if (canBuy && currentProductOffers.length > 0) {
         buttons += `<button class="buy" onclick="buy()">Купить</button>`;
     }
 
-    if (isSeller && p.seller_id == userId) {
+    // Изменить может либо админ, либо продавец, имеющий отношение к товару
+    if (isSeller && hasSellerOffer) {
         buttons += `<button class="edit" onclick="edit()">Редактировать</button>`;
     }
 
@@ -345,6 +417,17 @@ el("imageInput").addEventListener("change", async function () {
 
 /* BUY */
 function buy() {
+    const select = el("buySellerId");
+    select.innerHTML = "";
+
+    // Наполняем выпадающий список продавцов для покупки
+    currentProductOffers.forEach(o => {
+        const opt = document.createElement("option");
+        opt.value = o.seller_id;
+        opt.innerText = `${o.seller_name || 'Продавец ' + o.seller_id} (${o.price}$, в наличии: ${o.count} шт.)`;
+        select.appendChild(opt);
+    });
+
     el("buyModal").style.display = "flex";
     el("buyCount").value = 1;
     el("buyError").innerText = "";
@@ -356,9 +439,15 @@ function closeBuy() {
 
 async function confirmBuy() {
     const count = parseInt(el("buyCount").value);
+    const sellerId = parseInt(el("buySellerId").value);
 
     if (!count || count <= 0) {
         el("buyError").innerText = "Введите корректное количество";
+        return;
+    }
+
+    if (!sellerId) {
+        el("buyError").innerText = "Выберите продавца";
         return;
     }
 
@@ -366,7 +455,10 @@ async function confirmBuy() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count })
+        body: JSON.stringify({ 
+            count: count,
+            seller_id: sellerId 
+        })
     });
 
     if (res.ok) {
