@@ -62,7 +62,7 @@ function appendNotificationDOM(id, text, isRead, prepend = true) {
     }
     div.innerText = text;
 
-    // Клик просто снимает выделение и шлет запрос на бэкенд
+    // Клик теперь передает корректный ID, полученный из базы данных
     div.onclick = () => {
         readNotification(id, div);
     };
@@ -83,11 +83,16 @@ async function readNotification(id, element) {
     if (id > 0) {
         try {
             const res = await fetch(`/api/notifications/read/${id}`, { method: "POST" });
-            if (!res.ok) return;
+            if (!res.ok) {
+                console.error("Сервер вернул ошибку при прочтении:", res.status);
+                return;
+            }
         } catch (err) {
             console.error("Ошибка при чтении уведомления:", err);
             return;
         }
+    } else {
+        console.warn("Невозможно прочитать уведомление на сервере: некорректный ID =", id);
     }
 
     // Просто убираем класс unread (синее выделение пропадает)
@@ -96,10 +101,18 @@ async function readNotification(id, element) {
 
 // Получение уведомлений по сокетам в реальном времени
 socket.onmessage = function(event) {
-    const notificationText = event.data;
-
-    // Новое уведомление падает вверх списка, горит синим, id = 0
-    appendNotificationDOM(0, notificationText, false, true);
+    try {
+        // Парсим пришедшую строку в JSON-объект
+        const notification = JSON.parse(event.data);
+        
+        // Передаем реальный ID и текст, полученные от бэкенда
+        appendNotificationDOM(notification.id, notification.text, false, true);
+        
+    } catch (err) {
+        // На случай, если с бэкенда случайно прилетит обычный текст вместо JSON
+        console.warn("[WebSocket] Получен не JSON формат. Обработка как обычного текста.", err);
+        appendNotificationDOM(0, event.data, false, true);
+    }
 };
 
 socket.onclose = () => console.log("[WebSocket] Закрыто");

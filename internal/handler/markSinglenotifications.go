@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -9,23 +10,33 @@ import (
 )
 
 func MarkSingleNotificationRead(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+		return
+	}
+
 	user, _ := r.Context().Value(middelware.UserKey).(middelware.UserContext)
 	if user.ID == 0 {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	pathParts := strings.Split(r.URL.Path, "/")
-	notifIDStr := pathParts[len(pathParts)-1]
+	notifIDStr := strings.TrimPrefix(r.URL.Path, "/api/notifications/read/")
+	notifIDStr = strings.TrimSpace(notifIDStr)
+
+	notifIDStr = strings.TrimSuffix(notifIDStr, "/")
+
 	notifID, err := strconv.Atoi(notifIDStr)
-	if err != nil {
+	if err != nil || notifID <= 0 {
 		http.Error(w, "Неверный ID уведомления", http.StatusBadRequest)
 		return
 	}
 
 	err = repository.MarkNotificationAsRead(notifID, user.ID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println("Ошибка при чтении уведомления в БД:", err)
+		http.Error(w, "Ошибка сервера при обновлении статуса", http.StatusInternalServerError)
 		return
 	}
 
