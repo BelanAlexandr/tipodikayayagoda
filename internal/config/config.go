@@ -9,6 +9,9 @@ import (
 type Config struct {
 	ConnectionString string
 	JwtSecret        string
+	Endpoint         string
+	AccesKey         string
+	SecretAccesKey   string
 }
 
 func LoadConfig() *Config {
@@ -16,5 +19,8 @@ func LoadConfig() *Config {
 	return &Config{
 		ConnectionString: os.Getenv("DB_CONN_STR"),
 		JwtSecret:        os.Getenv("JWT_SECRET"),
+		Endpoint:         os.Getenv("END_POINT"),
+		AccesKey:         os.Getenv("ACCES_KEY"),
+		SecretAccesKey:   os.Getenv("SECRET_ACCES_KEY"),
 	}
 }

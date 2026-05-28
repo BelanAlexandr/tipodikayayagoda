@@ -7,15 +7,18 @@ import (
 	"tipodikayayagoda/internal/handler"
 	"tipodikayayagoda/internal/repository"
 	"tipodikayayagoda/internal/rout"
+	"tipodikayayagoda/internal/storage"
 	"tipodikayayagoda/internal/utils"
 	"tipodikayayagoda/pkg/database"
 )
 
 func main() {
 	handler.GlobalHub = handler.NewHub()
+
 	fmt.Println("Starting server at port 8080")
 	rout.Routes()
 	cfg := config.LoadConfig()
+	storage.InitMinio(cfg)
 	db := database.Conn(cfg)
 	utils.Init(cfg.JwtSecret)
 	repository.Init(db)
