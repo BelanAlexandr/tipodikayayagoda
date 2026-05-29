@@ -32,6 +32,7 @@ CREATE TABLE products (
     name VARCHAR(255) NOT NULL,
     description VARCHAR(255) NOT NULL,
     img_url VARCHAR(255),
+    offer BOOLEAN NOT NULL DEFAULT FALSE,
     category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT
 );
 

@@ -562,7 +562,9 @@ async function confirmBuy() {
         document.getElementById("buyError").innerText = await res.text();
     }
 }
-
+function goToAddUser() {
+    window.location.href = "/adduser";
+}
 function goToAddProduct() {
     window.location.href = "/addproduct";
 }

@@ -35,18 +35,10 @@ func AddProductHandlerShow(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func AddProductHandler(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value(middelware.UserKey).(middelware.UserContext)
-	if !ok {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
 	var req struct {
-		Name        string  `json:"name"`
-		CategoryID  int     `json:"category_id"`
-		Description string  `json:"description"`
-		Price       float64 `json:"price"`
-		Count       int     `json:"count"`
-		SellerID    int     `json:"seller_id"`
+		Name        string `json:"name"`
+		CategoryID  int    `json:"category_id"`
+		Description string `json:"description"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
@@ -60,11 +52,6 @@ func AddProductHandler(w http.ResponseWriter, r *http.Request) {
 		req.Name,
 		req.Description,
 		req.CategoryID,
-		req.Price,
-		req.Count,
-		req.SellerID,
-		user.Role,
-		user.ID,
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

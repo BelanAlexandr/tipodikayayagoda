@@ -11,6 +11,32 @@
         .form-group { margin-bottom: 18px; }
         label { display: block; margin-bottom: 8px; font-weight: bold; }
         input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; outline: none; }
+        
+        /* Стили для блока предпросмотра информации о товаре */
+        .product-preview {
+            background: #f9f9f9;
+            border: 1px dashed #ccc;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .preview-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        .preview-text {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.5;
+            margin-bottom: 6px;
+        }
+        .preview-text strong {
+            color: #000;
+        }
+
         .buttons { display: flex; gap: 10px; margin-top: 25px; }
         button { flex: 1; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .save-btn { background: #4CAF50; color: white; }
@@ -31,6 +57,12 @@
         <label>Введите название для поиска</label>
         <input type="text" id="searchProduct" list="product-suggestions" placeholder="Начните вводить название...">
         <datalist id="product-suggestions"></datalist>
+    </div>
+
+    <div id="productPreview" class="product-preview" style="display: none;">
+        <img id="previewImg" src="" alt="Фото товара" class="preview-img" onerror="this.onerror=null; this.src='http://localhost:9000/images/default.png';">
+        <div class="preview-text"><strong>Категория:</strong> <span id="previewCategory">Загрузка...</span></div>
+        <div class="preview-text"><strong>Описание:</strong> <span id="previewDescription"></span></div>
     </div>
 
     <form id="editForm" style="display: none;">
@@ -58,10 +90,21 @@
 <script>
     let selectedProductId = null;
     let allProducts = [];
+    let allCategories = []; // Массив для хранения всех категорий
 
     // Функция возврата на главную страницу
     function goBack() {
         window.location.href = "/index";
+    }
+
+    // Загрузка списка категорий
+    async function fetchCategories() {
+        try {
+            const res = await fetch("/api/categories");
+            allCategories = await res.json();
+        } catch (e) {
+            console.error("Ошибка загрузки категорий", e);
+        }
     }
 
     // Загрузка списка товаров
@@ -87,14 +130,33 @@
         
         if (selected) {
             selectedProductId = selected.id;
-            document.getElementById("price").value = selected.price;
-            document.getElementById("count").value = selected.count;
+            
+            // Ищем название категории по её ID в сохраненном массиве категорий
+            const categoryObj = allCategories.find(c => c.id === Number(selected.category_id));
+            const categoryName = categoryObj ? categoryObj.name : "Без категории";
+            
+            // Заполнение неизменяемых данных о товаре
+            const imgUrl = selected.img_url && selected.img_url.trim() !== '' ? selected.img_url : 'http://localhost:9000/images/default.png';
+            document.getElementById("previewImg").src = imgUrl;
+            document.getElementById("previewCategory").innerText = categoryName;
+            document.getElementById("previewDescription").innerText = selected.description || "Описание отсутствует";
+            
+            // Показываем блок инфо о товаре
+            document.getElementById("productPreview").style.display = "block";
+
+            // Заполнение полей для ввода цены и количества
+            document.getElementById("price").value = selected.price || "";
+            document.getElementById("count").value = selected.count || "";
+            
+            // Показываем форме и прячем нижнюю ссылку на главную
             document.getElementById("editForm").style.display = "block";
-            document.getElementById("backLinkContainer").style.display = "none"; // Прячем нижнюю ссылку, так как кнопка появится в форме
+            document.getElementById("backLinkContainer").style.display = "none"; 
         } else {
             selectedProductId = null;
+            // Скрываем форму и блок информации, если товар не найден/стерен текст
+            document.getElementById("productPreview").style.display = "none";
             document.getElementById("editForm").style.display = "none";
-            document.getElementById("backLinkContainer").style.display = "block"; // Возвращаем нижнюю ссылку
+            document.getElementById("backLinkContainer").style.display = "block"; 
         }
     });
 
@@ -129,7 +191,13 @@
         }
     });
 
-    fetchAllProducts();
+    // Инициализация загрузок
+    async function init() {
+        await fetchCategories(); // Сначала качаем категории
+        await fetchAllProducts(); // Потом товары
+    }
+
+    init();
 </script>
 
 </body>

@@ -70,7 +70,9 @@ func GetAllProd(search string, limit int, offset int, sort string, categoryID in
 		if err != nil {
 			panic(err)
 		}
-
+		if product.Count <= 0 {
+			continue
+		}
 		if desc.Valid {
 			product.Description = desc.String
 		}
