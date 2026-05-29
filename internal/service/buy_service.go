@@ -20,9 +20,9 @@ func BuyProduct(productID int, role int, count int, seller_id int) error {
 	if len(pro.Offers) == 0 {
 		return errors.New("product out of stock")
 	}
-	var targetOffer *models.OfferDetail // или как у тебя называется структура оффера
+	var targetOffer *models.OfferDetail
 	for _, offer := range pro.Offers {
-		if offer.SellerID == seller_id { // проверь, как в структуре: SellerID или Seller_id
+		if offer.SellerID == seller_id {
 			targetOffer = &offer
 			break
 		}

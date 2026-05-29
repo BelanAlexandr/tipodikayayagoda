@@ -9,7 +9,6 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 )
 
-// Глобальная переменная для работы с MinIO из других пакетов
 var MinioClient *minio.Client
 
 const BucketName = "images"
@@ -20,7 +19,6 @@ func InitMinio(cfg *config.Config) {
 	secretAccessKey := cfg.SecretAccesKey
 	useSSL := false
 
-	// Инициализируем клиент
 	client, err := minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
 		Secure: useSSL,

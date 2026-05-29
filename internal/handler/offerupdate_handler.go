@@ -5,10 +5,16 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"tipodikayayagoda/internal/middelware"
 	"tipodikayayagoda/internal/service"
 )
 
 func OfferUpdate(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value(middelware.UserKey).(middelware.UserContext)
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
 	if r.Method != http.MethodPut {
 		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 		return
@@ -27,7 +33,7 @@ func OfferUpdate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Ошибка разбора JSON: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = service.UpdateOffer(productID, req.Price, req.Count)
+	err = service.UpdateOffer(productID, req.Price, req.Count, user.ID)
 	if err != nil {
 		http.Error(w, "Ошибка обновления в базе данных: "+err.Error(), http.StatusInternalServerError)
 		return
