@@ -15,6 +15,7 @@ func AllProd() []models.Product {
 	var imgURL sql.NullString
 	var desc sql.NullString
 	var products []models.Product
+
 	for rows.Next() {
 		var product models.Product
 
@@ -23,6 +24,7 @@ func AllProd() []models.Product {
 			&product.Name,
 			&desc,
 			&imgURL,
+			&product.Offer,
 			&product.Category_id,
 		)
 		if err != nil {

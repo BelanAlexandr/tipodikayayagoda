@@ -9,7 +9,7 @@ func AddOffer(id, count int, price float64, user_id int) error {
 
 	_, err := db.Exec(productQuery, id, user_id, price, count)
 	productQuery = `UPDATE products 
-			SET offer = true,
+			SET offer = true
 			WHERE id = $1;`
 	_, err = db.Exec(productQuery, id)
 	if err != nil {

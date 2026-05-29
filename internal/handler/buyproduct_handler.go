@@ -24,14 +24,15 @@ func BuyProductHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Count int `json:"count"`
+		Count    int `json:"count"`
+		SellerID int `json:"seller_id"`
 	}
 	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, "invalid request body", 400)
 		return
 	}
-	err = service.BuyProduct(id, user.Role, req.Count)
+	err = service.BuyProduct(id, user.Role, req.Count, req.SellerID)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return

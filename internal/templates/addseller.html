@@ -51,9 +51,9 @@
 <body>
 
 <div class="container">
-    <h2>Тоже продавать этот товар</h2>
+    <h2 id="pageTitle">Тоже продавать этот товар</h2>
 
-    <div class="form-group">
+    <div class="form-group" id="searchGroup">
         <label>Введите название для поиска</label>
         <input type="text" id="searchProduct" list="product-suggestions" placeholder="Начните вводить название...">
         <datalist id="product-suggestions"></datalist>
@@ -75,7 +75,7 @@
             <input type="number" id="count" min="0" required>
         </div>
         <div class="buttons">
-            <button type="submit" class="save-btn">Создать предложение</button>
+            <button type="submit" class="save-btn" id="submitBtn">Создать предложение</button>
             <button type="button" class="back-btn" onclick="goBack()">Назад</button>
         </div>
     </form>
@@ -88,9 +88,13 @@
 </div>
 
 <script>
-    let selectedProductId = null;
+    const params = new URLSearchParams(window.location.search);
+    const productIdFromUrl = params.get("id");
+    const isEdit = productIdFromUrl !== null;
+
+    let selectedProductId = isEdit ? Number(productIdFromUrl) : null;
     let allProducts = [];
-    let allCategories = []; // Массив для хранения всех категорий
+    let allCategories = []; 
 
     // Функция возврата на главную страницу
     function goBack() {
@@ -123,37 +127,40 @@
         } catch (e) { console.error("Ошибка загрузки товаров", e); }
     }
 
-    // Обработка выбора (поиск по имени в массиве)
+    // Функция заполнения UI данными выбранного товара
+    function fillProductData(product) {
+        // Ищем название категории
+        const categoryObj = allCategories.find(c => c.id === Number(product.category_id));
+        const categoryName = categoryObj ? categoryObj.name : "Без категории";
+        
+        // Заполнение неизменяемых данных о товаре
+        const imgUrl = product.img_url && product.img_url.trim() !== '' ? product.img_url : 'http://localhost:9000/images/default.png';
+        document.getElementById("previewImg").src = imgUrl;
+        document.getElementById("previewCategory").innerText = categoryName;
+        document.getElementById("previewDescription").innerText = product.description || "Описание отсутствует";
+        
+        // Показываем блок инфо о товаре
+        document.getElementById("productPreview").style.display = "block";
+
+        // Заполнение полей для ввода цены и количества текущими значениями (если они есть в ответе)
+        document.getElementById("price").value = product.price || product.min_price || "";
+        document.getElementById("count").value = product.count || product.total_count || "";
+        
+        // Показываем форму
+        document.getElementById("editForm").style.display = "block";
+        document.getElementById("backLinkContainer").style.display = "none"; 
+    }
+
+    // Обработка выбора при ручном поиске
     document.getElementById("searchProduct").addEventListener("input", (e) => {
         const val = e.target.value;
         const selected = allProducts.find(p => p.name === val);
         
         if (selected) {
             selectedProductId = selected.id;
-            
-            // Ищем название категории по её ID в сохраненном массиве категорий
-            const categoryObj = allCategories.find(c => c.id === Number(selected.category_id));
-            const categoryName = categoryObj ? categoryObj.name : "Без категории";
-            
-            // Заполнение неизменяемых данных о товаре
-            const imgUrl = selected.img_url && selected.img_url.trim() !== '' ? selected.img_url : 'http://localhost:9000/images/default.png';
-            document.getElementById("previewImg").src = imgUrl;
-            document.getElementById("previewCategory").innerText = categoryName;
-            document.getElementById("previewDescription").innerText = selected.description || "Описание отсутствует";
-            
-            // Показываем блок инфо о товаре
-            document.getElementById("productPreview").style.display = "block";
-
-            // Заполнение полей для ввода цены и количества
-            document.getElementById("price").value = selected.price || "";
-            document.getElementById("count").value = selected.count || "";
-            
-            // Показываем форме и прячем нижнюю ссылку на главную
-            document.getElementById("editForm").style.display = "block";
-            document.getElementById("backLinkContainer").style.display = "none"; 
+            fillProductData(selected);
         } else {
             selectedProductId = null;
-            // Скрываем форму и блок информации, если товар не найден/стерен текст
             document.getElementById("productPreview").style.display = "none";
             document.getElementById("editForm").style.display = "none";
             document.getElementById("backLinkContainer").style.display = "block"; 
@@ -169,9 +176,14 @@
             count: parseInt(document.getElementById("count").value)
         };
 
+        // Если это редактирование, метод можно поменять на PUT, если бэкенд этого требует.
+        // Оставляем POST, как было в вашем коде.
+        let method = "POST"; 
+        let url = `/api/addseller/${selectedProductId}`;
+
         try {
-            const res = await fetch(`/api/addseller/${selectedProductId}`, {
-                method: "POST",
+            const res = await fetch(url, {
+                method: method,
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data)
             });
@@ -179,7 +191,7 @@
             const msg = document.getElementById("message");
             if (res.ok) {
                 msg.className = "message success";
-                msg.innerText = "Успешно обновлено! Перенаправляем...";
+                msg.innerText = isEdit ? "Изменения сохранены! Перенаправляем..." : "Успешно создано! Перенаправляем...";
                 setTimeout(() => { goBack(); }, 1500);
             } else {
                 msg.className = "message error";
@@ -195,6 +207,26 @@
     async function init() {
         await fetchCategories(); // Сначала качаем категории
         await fetchAllProducts(); // Потом товары
+
+        // Если страница открыта в режиме редактирования (?id=...)
+        if (isEdit) {
+            document.getElementById("pageTitle").innerText = "Редактировать предложение";
+            document.getElementById("submitBtn").innerText = "Сохранить изменения";
+            document.getElementById("searchGroup").style.display = "none"; // Прячем поиск, так как товар уже выбран по ID
+
+            // Ищем нужный товар по ID из URL в общем списке загруженных товаров
+            const currentProduct = allProducts.find(p => p.id === selectedProductId);
+            
+            if (currentProduct) {
+                fillProductData(currentProduct);
+            } else {
+                // Если товар с таким ID не найден на бэкенде
+                const msg = document.getElementById("message");
+                msg.className = "message error";
+                msg.innerText = "Товар не найден";
+                document.getElementById("backLinkContainer").style.display = "block";
+            }
+        }
     }
 
     init();

@@ -7,7 +7,10 @@ import (
 )
 
 func UpdateProd(productID int, name, desc string, categoryID int) error {
-	existingProduct := repository.GetProductpoIID(productID)
+	existingProduct, err := repository.GetProductpoIID(productID)
+	if err != nil {
+		return err
+	}
 	if existingProduct.ID == 0 {
 		return errors.New("product not found")
 	}

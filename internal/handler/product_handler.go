@@ -28,15 +28,20 @@ func ProductShow(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func Product(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimPrefix(r.URL.Path, "/api/product/")
-	idd, err := strconv.Atoi(id)
-
-	user := r.Context().Value(middelware.UserKey).(middelware.UserContext)
-	product := service.GetProdPoID(idd, user.Role, user.ID)
+	idStr := strings.TrimPrefix(r.URL.Path, "/api/product/")
+	idStr = strings.Trim(idStr, "/")
+	idd, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, "not found", 404)
+		http.Error(w, "invalid product id", http.StatusBadRequest)
+		return
+	}
+	user := r.Context().Value(middelware.UserKey).(middelware.UserContext)
+	product, err := service.GetProdPoID(idd, user.Role, user.ID)
+	if err != nil {
+		http.Error(w, "product not found", http.StatusNotFound)
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(product)
 }

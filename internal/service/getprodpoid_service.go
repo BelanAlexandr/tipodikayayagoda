@@ -1,26 +1,21 @@
 package service
 
 import (
+	"errors"
 	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/repository"
 )
 
-func GetProdPoID(id int, role int, userID int) models.ProductDetails {
-	p := repository.GetProductpoIID(id)
+func GetProdPoID(id int, role int, userID int) (models.ProductDetails, error) {
+
+	p, err := repository.GetProductpoIID(id)
+	if err != nil {
+		return models.ProductDetails{}, err
+	}
+
 	if p.ID == 0 {
-		return models.ProductDetails{}
+		return models.ProductDetails{}, errors.New("product not found")
 	}
-	if role == models.RoleSeller {
-		isOwner := false
-		for _, offer := range p.Offers {
-			if offer.SellerID == userID {
-				isOwner = true
-				break
-			}
-		}
-		if !isOwner {
-			return models.ProductDetails{}
-		}
-	}
-	return p
+
+	return p, nil
 }

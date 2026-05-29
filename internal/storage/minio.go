@@ -32,11 +32,10 @@ func InitMinio(cfg *config.Config) {
 	MinioClient = client
 	log.Println("Успешное подключение к MinIO")
 
-	// Автоматически создаем бакет, если его не существует
 	ctx := context.Background()
 	err = MinioClient.MakeBucket(ctx, BucketName, minio.MakeBucketOptions{})
 	if err != nil {
-		// Проверяем, может бакет уже создан
+
 		exists, errBucketExists := MinioClient.BucketExists(ctx, BucketName)
 		if errBucketExists == nil && exists {
 			log.Printf("Бакет '%s' уже существует\n", BucketName)
@@ -47,9 +46,6 @@ func InitMinio(cfg *config.Config) {
 		log.Printf("Бакет '%s' успешно создан\n", BucketName)
 	}
 
-	// Устанавливаем политику "По публичной ссылке можно только читать файлы"
-	// Это нужно, чтобы тег <img src="..."> на сайте смог отобразить картинку
-	// Устанавливаем политику "Анонимные пользователи могут только читать файлы"
 	policy := `{
     "Version": "2012-10-17",
     "Statement": [

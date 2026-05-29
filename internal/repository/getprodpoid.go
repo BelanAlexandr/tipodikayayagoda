@@ -5,7 +5,7 @@ import (
 	"tipodikayayagoda/internal/models"
 )
 
-func GetProductpoIID(id int) models.ProductDetails {
+func GetProductpoIID(id int) (models.ProductDetails, error) {
 	var imgURL sql.NullString
 	var desc sql.NullString
 	var p models.ProductDetails
@@ -16,7 +16,7 @@ func GetProductpoIID(id int) models.ProductDetails {
 
 	err := db.QueryRow(productQuery, id).Scan(&p.ID, &p.Name, &desc, &imgURL, &p.CategoryID)
 	if err != nil {
-		return models.ProductDetails{}
+		return models.ProductDetails{}, err
 	}
 	if desc.Valid {
 		p.Description = desc.String
@@ -25,15 +25,15 @@ func GetProductpoIID(id int) models.ProductDetails {
 		p.ImageURL = imgURL.String
 	}
 	offersQuery := `
-		SELECT o.seller_id, COALESCE(u.username, 'Продавец') as seller_name, o.price, o.count
-		FROM product_offers o
-		LEFT JOIN users u ON o.seller_id = u.id
-		WHERE o.product_id = $1
-		ORDER BY o.price ASC;`
-
+    SELECT o.seller_id, COALESCE(u.name, 'Продавец') as seller_name, o.price::integer, o.count
+    FROM product_offers o
+    LEFT JOIN users u ON o.seller_id = u.id
+    WHERE o.product_id = $1
+    ORDER BY o.price ASC;`
 	rows, err := db.Query(offersQuery, id)
+
 	if err != nil {
-		return p
+		return p, err
 	}
 	defer rows.Close()
 
@@ -43,8 +43,9 @@ func GetProductpoIID(id int) models.ProductDetails {
 		if err != nil {
 			continue
 		}
+
 		p.Offers = append(p.Offers, offer)
 	}
 
-	return p
+	return p, nil
 }

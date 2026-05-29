@@ -8,4 +8,5 @@ type Product struct {
 	Category_id int     `json:"category_id"`
 	Price       float64 `json:"price"`
 	Count       int     `json:"count"`
+	Offer       bool    `json:"offer"`
 }

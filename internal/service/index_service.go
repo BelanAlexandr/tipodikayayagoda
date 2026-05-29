@@ -9,9 +9,14 @@ func GetProducts(role int, userID int, search string, page int, limit int, sort 
 
 	offset := (page - 1) * limit
 
-	if role == models.RoleAdmin || role == models.RoleClient {
+	if role == models.RoleAdmin {
 
-		products, totalCount := repository.GetAllProd(search, limit, offset, sort, category)
+		products, totalCount := repository.GetAllProdAdmin(search, limit, offset, sort, category)
+
+		return products, totalCount, nil
+	} else if role == models.RoleClient {
+
+		products, totalCount := repository.GetAllProdClient(search, limit, offset, sort, category)
 
 		return products, totalCount, nil
 	}

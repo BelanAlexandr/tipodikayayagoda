@@ -20,7 +20,6 @@
             align-items: center;
         }
 
-        /* Верхняя панель навигации для колокольчика */
         .top-nav {
             width: 100%;
             max-width: 600px;
@@ -83,6 +82,7 @@
             padding: 10px 14px;
             border-radius: 8px;
             cursor: pointer;
+            font-weight: bold;
         }
 
         .buy { background: #4CAF50; color: white; }
@@ -128,7 +128,6 @@
             flex: 1;
         }
 
-        /* Таблица предложений */
         .offers-table {
             width: 100%;
             border-collapse: collapse;
@@ -148,7 +147,6 @@
             font-weight: bold;
         }
 
-        /* ===== СТИЛИ КОЛОКОЛЬЧИКА УВЕДОМЛЕНИЙ ===== */
         .notification-bell-container {
             position: relative;
             display: inline-block;
@@ -200,24 +198,10 @@
             cursor: pointer;
         }
 
-        .notification-item:hover {
-            background: #f5f5f5;
-        }
-
-        .notification-item.unread {
-            background: #f0f7ff;
-        }
-
-        .notification-item.unread:hover {
-            background: #e2f0ff;
-        }
-
-        .empty-notifications {
-            padding: 20px;
-            color: #999;
-            text-align: center;
-            font-size: 13px;
-        }
+        .notification-item:hover { background: #f5f5f5; }
+        .notification-item.unread { background: #f0f7ff; }
+        .notification-item.unread:hover { background: #e2f0ff; }
+        .empty-notifications { padding: 20px; color: #999; text-align: center; font-size: 13px; }
     </style>
 </head>
 
@@ -226,11 +210,8 @@
 <div class="top-nav">
     <div class="notification-bell-container" id="bellContainer">
         <span id="bell-icon">🔔</span>
-
         <div id="notifications-dropdown">
-            <div class="dropdown-header">
-                <span>Уведомления</span>
-            </div>
+            <div class="dropdown-header"><span>Уведомления</span></div>
             <div id="notifications-list">
                 <div class="empty-notifications">Нет новых уведомлений</div>
             </div>
@@ -238,21 +219,21 @@
     </div>
 </div>
 
-<div class="container">
-
+<div class="container" id="product-container">
     <img id="productImage" class="product-image" style="display:none;">
     <input type="file" id="imageInput" style="display:none">
 
     <div class="title" id="title">Загрузка...</div>
     <div class="desc" id="desc"></div>
+    
     <div class="info" id="info"></div>
+    
     <div class="buttons" id="buttons"></div>
 </div>
 
 <div class="modal" id="buyModal">
     <div class="modal-content">
         <h3>Покупка товара</h3>
-
         <label style="display:block; text-align:left; margin-top:10px; font-size:14px; font-weight:bold;">Продавец:</label>
         <select id="buySellerId"></select>
 
@@ -263,128 +244,104 @@
             <button onclick="confirmBuy()" class="buy">Купить</button>
             <button onclick="closeBuy()" class="back">Назад</button>
         </div>
-
         <p id="buyError" style="color:red;margin-top:10px;"></p>
     </div>
 </div>
 
 <script>
-
 const userId = Number("{{.UserID}}");
 
-/* ===== FLAGS ===== */
 const isAdmin = "{{.IsAdmin}}".trim() === "true";
 const isSeller = "{{.IsSeller}}".trim() === "true";
 const canBuy = "{{.CanBuy}}".trim() === "true";
 
 const productId = window.location.pathname.split("/").filter(Boolean).pop();
+let currentProductOffers = []; 
 
-let currentProductOffers = []; // Локальное хранилище предложений
+function el(id) { return document.getElementById(id); }
 
-function el(id) {
-    return document.getElementById(id);
-}
-
-/* LOAD PRODUCT */
 async function loadProduct() {
-    const res = await fetch("/api/product/" + productId, {
-        credentials: "include"
-    });
-
-    if (!res.ok) {
-        document.body.innerHTML = "Ошибка загрузки товара";
-        return;
-    }
-
-    const p = await res.json();
-    currentProductOffers = p.offers || [];
-
-    el("title").innerText = p.name || "";
-    el("desc").innerText = p.description || "";
-
-    // Логика построения контента в зависимости от роли
-    let infoHTML = "";
-    let hasSellerOffer = false;
-
-    if (isSeller) {
-        // Продавец видит именно свои показатели цены и остатков
-        const myOffer = currentProductOffers.find(o => o.seller_id === userId);
-        if (myOffer) {
-            hasSellerOffer = true;
-            infoHTML = `
-                💰 **Ваша цена**: ${myOffer.price}$ <br>
-                📦 **Ваш остаток**: ${myOffer.count} шт.
-            `;
-        } else {
-            infoHTML = `<span style="color: #ff9800;">Вы еще не добавили свое предложение цен к этому товару.</span>`;
+    try {
+        const res = await fetch(`/api/product/${productId}`, { credentials: "include" });
+        if (!res.ok) {
+            el("title").innerText = "Товар не найден";
+            return;
         }
-    } else {
-        // Покупатели и админы видят общую таблицу всех доступных продавцов
-        if (currentProductOffers.length > 0) {
-            infoHTML = `<strong>Доступные предложения:</strong><table class="offers-table">
-                <thead>
-                    <tr>
-                        <th>Продавец</th>
-                        <th>Цена</th>
-                        <th>В наличии</th>
-                    </tr>
-                </thead>
-                <tbody>`;
+
+        const p = await res.json();
+
+        currentProductOffers = p.offers || []; 
+
+        el("title").innerText = p.name;
+        el("desc").innerText = p.description || "Описание отсутствует";
+        
+        const img = el("productImage");
+        img.src = (p.img_url && p.img_url.trim() !== "") ? p.img_url : "http://localhost:9000/images/default.png";
+        img.style.display = "block";
+
+        if (isAdmin || isSeller) {
+            img.classList.add("editable");
+            img.onclick = () => el("imageInput").click();
+        }
+
+        let infoHTML = "";
+
+        if (currentProductOffers.length === 0) {
+            infoHTML = `<div style="color: red; font-weight: bold; margin-top: 15px;">Нет доступных предложений от продавцов</div>`;
+        } else {
+            infoHTML = `
+                <strong style="display:block; margin-top:15px;">Доступные предложения:</strong>
+                <table class="offers-table">
+                    <thead>
+                        <tr>
+                            <th>Продавец</th>
+                            <th>Цена</th>
+                            <th>В наличии</th>
+                        </tr>
+                    </thead>
+                    <tbody id="offersTableBody">`;
             
-            currentProductOffers.forEach(o => {
+            currentProductOffers.forEach(offer => {
                 infoHTML += `
                     <tr>
-                        <td>${o.seller_name || 'Продавец #' + o.seller_id}</td>
-                        <td>${o.price}$</td>
-                        <td>${o.count} шт.</td>
+                        <td><strong>${offer.seller_name || `Продавец #` + offer.seller_id}</strong></td>
+                        <td>${offer.price} $</td>
+                        <td>${offer.count} шт.</td>
                     </tr>
                 `;
             });
+            
             infoHTML += `</tbody></table>`;
-        } else {
-            infoHTML = `<span style="color: red;">Товара нет в наличии у продавцов.</span>`;
         }
+
+        el("info").innerHTML = infoHTML;
+
+        let buttonsHTML = "";
+        
+        if (canBuy && currentProductOffers.length > 0) {
+            buttonsHTML += `<button class="buy" onclick="buy()">Купить товар</button>`;
+        }
+        if (isSeller) {
+            const hasMyOffer = currentProductOffers.some(o => o.seller_id === userId);
+            if (hasMyOffer) {
+                buttonsHTML += `<button class="edit" onclick="edit()">Редактировать предложение</button>`;
+            }
+        }
+        if (isAdmin) {
+            buttonsHTML += `
+                <button class="edit" onclick="edit()">Редактировать</button>
+                <button class="delete" onclick="deleteProduct(${p.id})">Удалить товар</button>
+            `;
+        }
+        buttonsHTML += `<button class="back" onclick="back()">Назад</button>`;
+        el("buttons").innerHTML = buttonsHTML;
+
+    } catch (err) {
+        console.error("Ошибка при получении деталей товара:", err);
+        el("title").innerText = "Ошибка загрузки данных.";
     }
-
-    el("info").innerHTML = infoHTML;
-
-    const img = el("productImage");
-    img.src = (p.img_url && p.img_url !== "")
-        ? p.img_url
-        : "http://localhost:9000/images/default.png";
-
-    img.style.display = "block";
-
-    /* IMAGE EDIT */
-    if (isAdmin || isSeller) {
-        img.classList.add("editable");
-        img.onclick = () => el("imageInput").click();
-    }
-
-    let buttons = "";
-
-    if (canBuy && currentProductOffers.length > 0) {
-        buttons += `<button class="buy" onclick="buy()">Купить</button>`;
-    }
-
-    // Изменить может либо админ, либо продавец, имеющий отношение к товару
-    if (isSeller && hasSellerOffer) {
-        buttons += `<button class="edit" onclick="edit()">Редактировать</button>`;
-    }
-
-    if (isAdmin) {
-        buttons += `
-            <button class="edit" onclick="edit()">Редактировать</button>
-            <button class="delete" onclick="deleteProduct(${p.id})">Удалить</button>
-        `;
-    }
-
-    buttons += `<button class="back" onclick="back()">Назад</button>`;
-
-    el("buttons").innerHTML = buttons;
 }
 
-/* IMAGE UPLOAD */
 el("imageInput").addEventListener("change", async function () {
     const file = this.files[0];
     if (!file) return;
@@ -392,109 +349,74 @@ el("imageInput").addEventListener("change", async function () {
     const formData = new FormData();
     formData.append("image", file);
 
-    const res = await fetch("/api/uploadimage/" + productId, {
-        method: "POST",
-        body: formData,
-        credentials: "include"
-    });
-
-    if (!res.ok) {
-        alert("Ошибка загрузки картинки");
-        return;
-    }
+    const res = await fetch("/api/uploadimage/" + productId, { method: "POST", body: formData, credentials: "include" });
+    if (!res.ok) { alert("Ошибка загрузки картинки"); return; }
 
     const data = await res.json();
-
     await fetch("/api/product/" + productId, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ img_url: data.url })
     });
-
     loadProduct();
 });
 
-/* BUY */
 function buy() {
     const select = el("buySellerId");
     select.innerHTML = "";
+    
+    if (currentProductOffers.length === 0) return;
 
-    // Наполняем выпадающий список продавцов для покупки
     currentProductOffers.forEach(o => {
         const opt = document.createElement("option");
         opt.value = o.seller_id;
         opt.innerText = `${o.seller_name || 'Продавец ' + o.seller_id} (${o.price}$, в наличии: ${o.count} шт.)`;
         select.appendChild(opt);
     });
-
+    
     el("buyModal").style.display = "flex";
     el("buyCount").value = 1;
     el("buyError").innerText = "";
 }
 
-function closeBuy() {
-    el("buyModal").style.display = "none";
-}
+function closeBuy() { el("buyModal").style.display = "none"; }
 
 async function confirmBuy() {
     const count = parseInt(el("buyCount").value);
     const sellerId = parseInt(el("buySellerId").value);
 
-    if (!count || count <= 0) {
-        el("buyError").innerText = "Введите корректное количество";
-        return;
-    }
-
-    if (!sellerId) {
-        el("buyError").innerText = "Выберите продавца";
-        return;
-    }
+    if (!count || count <= 0) { el("buyError").innerText = "Введите корректное количество"; return; }
+    if (!sellerId) { el("buyError").innerText = "Выберите продавца"; return; }
 
     const res = await fetch("/api/product/buy/" + productId, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-            count: count,
-            seller_id: sellerId 
-        })
+        body: JSON.stringify({ count: count, seller_id: sellerId }) // <-- Отправляем seller_id
     });
 
-    if (res.ok) {
-        alert("Покупка успешна!");
-        closeBuy();
-        loadProduct();
-    } else {
-        el("buyError").innerText = await res.text();
+    if (res.ok) { 
+        alert("Покупка успешна!"); 
+        closeBuy(); 
+        loadProduct(); 
+    } else { 
+        el("buyError").innerText = await res.text(); 
     }
 }
 
-/* NAV */
-function edit() {
-    window.location.href = "/addproduct?id=" + productId;
-}
+function edit() { window.location.href = "/addproduct?id=" + productId; }
 
 async function deleteProduct(id) {
     if (!confirm("Удалить товар?")) return;
-
-    await fetch("/api/product/delete/" + id, {
-        method: "DELETE",
-        credentials: "include"
-    });
-
+    await fetch("/api/product/delete/" + id, { method: "DELETE", credentials: "include" });
     window.location.href = "/index";
 }
 
-function back() {
-    window.location.href = "/index";
-}
+function back() { window.location.href = "/index"; }
 
 loadProduct();
-
 </script>
-
 <script src="/static/js/websocket.js"></script>
-
 </body>
 </html>

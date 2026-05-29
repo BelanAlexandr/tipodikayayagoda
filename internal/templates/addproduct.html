@@ -197,7 +197,6 @@
 
         <div class="form-group">
             <label>Категория товара</label>
-
             <select id="category_id" required>
                 <option value="">Загрузка категорий...</option>
             </select>
@@ -227,90 +226,60 @@
 <script>
 
 const userId = Number("{{.UserID}}");
-
 const isAdmin = "{{.IsAdmin}}".trim() === "true";
 const isSeller = "{{.IsSeller}}".trim() === "true";
 
 const params = new URLSearchParams(window.location.search);
-
 const productId = params.get("id");
 const isEdit = productId !== null;
 
 /* Загрузка категорий */
 async function loadCategories() {
-
     try {
-
         const res = await fetch("/api/categories");
-
         const categories = await res.json();
-
         const select = document.getElementById("category_id");
 
         if (!categories || categories.length === 0) {
-
-            select.innerHTML =
-                '<option value="">Сначала создайте категории</option>';
-
+            select.innerHTML = '<option value="">Сначала создайте категории</option>';
             return false;
         }
 
-        select.innerHTML =
-            '<option value="">-- Выберите категорию --</option>';
-
+        select.innerHTML = '<option value="">-- Выберите категорию --</option>';
         categories.forEach(cat => {
-
             const option = document.createElement("option");
-
             option.value = cat.id;
             option.innerText = cat.name;
-
             select.appendChild(option);
         });
 
         return true;
-
     } catch (err) {
-
         console.error(err);
-
-        document.getElementById("category_id").innerHTML =
-            '<option value="">Ошибка загрузки</option>';
-
+        document.getElementById("category_id").innerHTML = '<option value="">Ошибка загрузки</option>';
         return false;
     }
 }
 
 /* Инициализация формы */
 async function initForm() {
-
     const categoriesLoaded = await loadCategories();
 
     if (isEdit && categoriesLoaded) {
-
-        document.getElementById("title").innerText =
-            "Редактировать товар";
-
-        document.getElementById("submitBtn").innerText =
-            "Сохранить";
+        document.getElementById("title").innerText = "Редактировать товар";
+        document.getElementById("submitBtn").innerText = "Сохранить";
 
         try {
-
             const res = await fetch("/api/product/" + productId, {
                 credentials: "include"
             });
-
             const p = await res.json();
 
-            document.getElementById("name").value =
-                p.name || "";
-
-            document.getElementById("description").value =
-                p.description || "";
+            document.getElementById("name").value = p.name || "";
+            document.getElementById("description").value = p.description || "";
 
             if (p.category_id) {
-                document.getElementById("category_id").value =
-                    p.category_id;
+                document.getElementById("category_id").value = p.category_id;
             }
 
         } catch (err) {
@@ -319,18 +288,17 @@ async function initForm() {
     }
 }
 
-/* Submit */
+/* Отправка формы */
 document.getElementById("productForm").addEventListener("submit", async function(e) {
-
     e.preventDefault();
+    const message = document.getElementById("message");
+    message.innerText = "Сохранение...";
+    message.className = "message";
 
+    // Формируем JSON товара без картинки
     const product = {
         name: document.getElementById("name").value.trim(),
-
-        category_id: Number(
-            document.getElementById("category_id").value
-        ),
-
+        category_id: Number(document.getElementById("category_id").value),
         description: document.getElementById("description").value.trim()
     };
 
@@ -338,14 +306,11 @@ document.getElementById("productForm").addEventListener("submit", async function
     let method = "POST";
 
     if (isEdit) {
-
         url = "/api/product/edit/" + productId;
-
         method = "PUT";
     }
 
     try {
-
         const res = await fetch(url, {
             method: method,
             credentials: "include",
@@ -355,43 +320,28 @@ document.getElementById("productForm").addEventListener("submit", async function
             body: JSON.stringify(product)
         });
 
-        const message = document.getElementById("message");
-
         if (res.ok) {
-
             message.className = "message success";
-
-            message.innerText =
-                isEdit
-                    ? "Товар обновлён"
-                    : "Товар добавлен";
+            message.innerText = isEdit ? "Товар обновлён" : "Товар добавлен";
 
             setTimeout(() => {
                 window.location.href = "/index";
             }, 800);
-
         } else {
-
             const text = await res.text();
-
             message.className = "message error";
-
-            message.innerText =
-                "Ошибка: " + text;
+            message.innerText = "Ошибка сохранения товара: " + text;
         }
 
     } catch (err) {
-
         console.error(err);
-
-        document.getElementById("message").innerText =
-            "Ошибка сети";
+        message.className = "message error";
+        message.innerText = "Ошибка сети при сохранении товара";
     }
 });
 
 /* Назад */
 function goBack() {
-
     if (isEdit) {
         window.location.href = "/product/" + productId;
     } else {
@@ -399,7 +349,6 @@ function goBack() {
     }
 }
 
-/* Запуск */
 initForm();
 
 </script>
