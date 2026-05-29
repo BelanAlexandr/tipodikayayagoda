@@ -331,7 +331,10 @@ if (canAddUser) {
     headerButtons += `<button class="admin-btn" onclick="goToAddUser()">Добавить пользователя</button>`;
 }
 
-if (canAddProduct) {
+// Измененная логика разделения прав для продавца и админа
+if (isSeller) {
+    headerButtons += `<button class="admin-btn" onclick="goToAddSeller()">Создать предложение</button>`;
+} else if (canAddProduct) {
     headerButtons += `<button class="admin-btn" onclick="goToAddProduct()">Добавить товар</button>`;
 }
 
@@ -434,7 +437,6 @@ async function loadProducts() {
                 buttons += `<button class="buy-btn" onclick="buy(${p.id})">Купить</button>`;
             }
 
-            // Бэкенд для продавца пришлет только ЕГО товары, поэтому проверка p.seller_id снята
             if (isSeller) {
                 buttons += `<button class="edit-btn" onclick="editProduct(${p.id})">Изменить</button>`;
             }
@@ -565,8 +567,8 @@ function goToAddProduct() {
     window.location.href = "/addproduct";
 }
 
-function goToAddUser() {
-    window.location.href = "/adduser";
+function goToAddSeller() {
+    window.location.href = "/addseller";
 }
 
 function editProduct(id) {

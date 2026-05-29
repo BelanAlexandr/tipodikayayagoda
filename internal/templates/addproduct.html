@@ -208,24 +208,6 @@
             <textarea id="description" required></textarea>
         </div>
 
-        <div class="form-group">
-            <label>Цена</label>
-            <input type="number" id="price" min="0" step="0.01" required>
-        </div>
-
-        <div class="form-group">
-            <label>Количество</label>
-            <input type="number" id="count" min="1" required>
-        </div>
-
-        <div class="form-group" id="sellerField" style="display:none;">
-            <label>Продавец</label>
-
-            <select id="seller_id">
-                <option value="">Загрузка продавцов...</option>
-            </select>
-        </div>
-
         <div class="buttons">
             <button type="button" class="back-btn" onclick="goBack()">
                 Назад
@@ -253,11 +235,6 @@ const params = new URLSearchParams(window.location.search);
 
 const productId = params.get("id");
 const isEdit = productId !== null;
-
-/* Админ видит продавцов */
-if (isAdmin) {
-    document.getElementById("sellerField").style.display = "block";
-}
 
 /* Загрузка категорий */
 async function loadCategories() {
@@ -304,66 +281,12 @@ async function loadCategories() {
     }
 }
 
-/* Загрузка продавцов */
-async function loadSellers() {
-
-    if (!isAdmin) {
-        return true;
-    }
-
-    try {
-
-        const res = await fetch("/api/sellers");
-
-        const sellers = await res.json();
-
-        const select = document.getElementById("seller_id");
-
-        if (!sellers || sellers.length === 0) {
-
-            select.innerHTML =
-                '<option value="">Продавцов нет</option>';
-
-            return false;
-        }
-
-        select.innerHTML =
-            '<option value="">-- Выберите продавца --</option>';
-
-        sellers.forEach(seller => {
-
-            const option = document.createElement("option");
-
-            option.value = seller.id;
-
-            option.innerText =
-                `${seller.name || seller.username || "Продавец"} (ID: ${seller.id})`;
-
-            select.appendChild(option);
-        });
-
-        return true;
-
-    } catch (err) {
-
-        console.error(err);
-
-        document.getElementById("seller_id").innerHTML =
-            '<option value="">Ошибка загрузки</option>';
-
-        return false;
-    }
-}
-
 /* Инициализация формы */
 async function initForm() {
 
-    const [categoriesLoaded, sellersLoaded] = await Promise.all([
-        loadCategories(),
-        loadSellers()
-    ]);
+    const categoriesLoaded = await loadCategories();
 
-    if (isEdit && categoriesLoaded && sellersLoaded) {
+    if (isEdit && categoriesLoaded) {
 
         document.getElementById("title").innerText =
             "Редактировать товар";
@@ -385,20 +308,9 @@ async function initForm() {
             document.getElementById("description").value =
                 p.description || "";
 
-            document.getElementById("price").value =
-                p.price || "";
-
-            document.getElementById("count").value =
-                p.count || "";
-
             if (p.category_id) {
                 document.getElementById("category_id").value =
                     p.category_id;
-            }
-
-            if (isAdmin && p.seller_id) {
-                document.getElementById("seller_id").value =
-                    p.seller_id;
             }
 
         } catch (err) {
@@ -419,31 +331,8 @@ document.getElementById("productForm").addEventListener("submit", async function
             document.getElementById("category_id").value
         ),
 
-        description: document.getElementById("description").value.trim(),
-
-        price: parseFloat(
-            document.getElementById("price").value
-        ),
-
-        count: parseInt(
-            document.getElementById("count").value
-        )
+        description: document.getElementById("description").value.trim()
     };
-
-    if (isAdmin) {
-
-        const sellerId =
-            document.getElementById("seller_id").value;
-
-        if (!sellerId) {
-
-            alert("Выберите продавца");
-
-            return;
-        }
-
-        product.seller_id = Number(sellerId);
-    }
 
     let url = "/api/addproduct";
     let method = "POST";

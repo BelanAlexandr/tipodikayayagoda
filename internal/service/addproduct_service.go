@@ -7,17 +7,11 @@ import (
 )
 
 func Addproduct(name, desc string, categoryID int, price float64, count int, reqSellerID int, role int, userID int) error {
-	if role == models.RoleAdmin {
-		if reqSellerID == 0 {
-			return errors.New("seller ID is required for admin")
-		}
-		if !repository.SellerCheck(reqSellerID) {
-			return errors.New("invalid seller ID")
-		}
-	} else if role == models.RoleSeller {
-		reqSellerID = userID
-	} else {
-		return errors.New("invalid user role")
+	if reqSellerID == 0 {
+		return errors.New("seller ID is required for admin")
+	}
+	if !repository.SellerCheck(reqSellerID) {
+		return errors.New("invalid seller ID")
 	}
 	product := models.Product{
 		Name:        name,
