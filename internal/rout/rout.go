@@ -14,7 +14,7 @@ func Routes() {
 	http.HandleFunc("/api/login", handler.Login)
 	http.HandleFunc("/index", middelware.RoleMiddleware(models.RoleClient, models.RoleSeller, models.RoleAdmin)(handler.IndexHandlerShow))
 	http.HandleFunc("/api/index", middelware.RoleMiddleware(models.RoleClient, models.RoleSeller, models.RoleAdmin)(handler.IndexHandler))
-	http.HandleFunc("/addproduct", middelware.RoleMiddleware(models.RoleSeller, models.RoleAdmin)(handler.AddProductHandlerShow))
+	http.HandleFunc("/addproduct", middelware.RoleMiddleware(models.RoleAdmin)(handler.AddProductHandlerShow))
 	http.HandleFunc("/api/addproduct", middelware.RoleMiddleware(models.RoleSeller, models.RoleAdmin)(handler.AddProductHandler))
 	http.HandleFunc("/adduser", middelware.RoleMiddleware(models.RoleAdmin)(handler.AdminRegisterShow))
 	http.HandleFunc("/api/adduser", middelware.RoleMiddleware(models.RoleAdmin)(handler.AdminRegister))

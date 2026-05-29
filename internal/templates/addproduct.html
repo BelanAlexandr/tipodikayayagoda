@@ -2,115 +2,520 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Управление товаром</title>
+    <title>Добавить / Редактировать товар</title>
+
     <style>
-        body { background: #f5f5f5; padding: 30px; font-family: Arial, sans-serif; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 550px; background: white; padding: 30px; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 6px; font-size: 14px; }
-        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
-        .buttons { display: flex; gap: 10px; margin-top: 25px; }
-        button { flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .save-btn { background: #4CAF50; color: white; }
-        .back-btn { background: #9e9e9e; color: white; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f5f5f5;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .top-nav {
+            width: 100%;
+            max-width: 550px;
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 550px;
+            background: white;
+            padding: 30px;
+            border-radius: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        h2 {
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #2196F3;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        button {
+            flex: 1;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        .save-btn {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .save-btn:hover {
+            background: #388E3C;
+        }
+
+        .back-btn {
+            background: #9e9e9e;
+            color: white;
+        }
+
+        .back-btn:hover {
+            background: #757575;
+        }
+
+        .message {
+            margin-top: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .success {
+            color: green;
+        }
+
+        .error {
+            color: red;
+        }
+
+        /* Колокольчик */
+        .notification-bell-container {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        #bell-icon {
+            font-size: 26px;
+        }
+
+        #notifications-dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 40px;
+            width: 320px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border: 1px solid #e0e0e0;
+            max-height: 350px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .dropdown-header {
+            padding: 12px 15px;
+            font-weight: bold;
+            border-bottom: 1px solid #eee;
+        }
+
+        .empty-notifications {
+            padding: 20px;
+            color: #999;
+            text-align: center;
+            font-size: 13px;
+        }
     </style>
 </head>
+
 <body>
 
+<div class="top-nav">
+    <div class="notification-bell-container">
+        <span id="bell-icon">🔔</span>
+
+        <div id="notifications-dropdown">
+            <div class="dropdown-header">
+                Уведомления
+            </div>
+
+            <div id="notifications-list">
+                <div class="empty-notifications">
+                    Нет новых уведомлений
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="container">
-    <h2 id="pageTitle">Товар</h2>
+
+    <h2 id="title">Добавить товар</h2>
+
     <form id="productForm">
+
         <div class="form-group">
-            <label>Название</label>
+            <label>Название товара</label>
             <input type="text" id="name" required>
         </div>
+
         <div class="form-group">
-            <label>Категория</label>
-            <select id="category_id" required></select>
+            <label>Категория товара</label>
+
+            <select id="category_id" required>
+                <option value="">Загрузка категорий...</option>
+            </select>
         </div>
+
         <div class="form-group">
             <label>Описание</label>
             <textarea id="description" required></textarea>
         </div>
+
         <div class="form-group">
-            <label>Цена ($)</label>
-            <input type="number" id="price" step="0.01" required>
+            <label>Цена</label>
+            <input type="number" id="price" min="0" step="0.01" required>
         </div>
+
         <div class="form-group">
             <label>Количество</label>
-            <input type="number" id="count" required>
+            <input type="number" id="count" min="1" required>
         </div>
+
+        <div class="form-group" id="sellerField" style="display:none;">
+            <label>Продавец</label>
+
+            <select id="seller_id">
+                <option value="">Загрузка продавцов...</option>
+            </select>
+        </div>
+
         <div class="buttons">
-            <button type="button" class="back-btn" onclick="history.back()">Назад</button>
-            <button type="submit" class="save-btn">Сохранить</button>
+            <button type="button" class="back-btn" onclick="goBack()">
+                Назад
+            </button>
+
+            <button type="submit" class="save-btn" id="submitBtn">
+                Добавить
+            </button>
         </div>
+
     </form>
+
+    <div id="message" class="message"></div>
+
 </div>
 
 <script>
-const params = new URLSearchParams(window.location.search);
-const productId = params.get("id");
+
 const userId = Number("{{.UserID}}");
 
-// Функция безопасного получения данных (независимо от регистра ключей)
-function getVal(obj, keys) {
-    for (let k of keys) {
-        if (obj[k] !== undefined) return obj[k];
-    }
-    return "";
+const isAdmin = "{{.IsAdmin}}".trim() === "true";
+const isSeller = "{{.IsSeller}}".trim() === "true";
+
+const params = new URLSearchParams(window.location.search);
+
+const productId = params.get("id");
+const isEdit = productId !== null;
+
+/* Админ видит продавцов */
+if (isAdmin) {
+    document.getElementById("sellerField").style.display = "block";
 }
 
-async function init() {
-    // 1. Грузим категории
-    const catRes = await fetch("/api/categories");
-    const cats = await catRes.json();
-    const select = document.getElementById("category_id");
-    cats.forEach(c => select.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+/* Загрузка категорий */
+async function loadCategories() {
 
-    // 2. Если ID есть, грузим товар
-    if (productId) {
-        const res = await fetch("/api/product/" + productId);
-        if (!res.ok) return;
-        const p = await res.json();
-        console.log("Данные от сервера:", p);
+    try {
 
-        // Заполняем поля, проверяя разные варианты написания ключей
-        document.getElementById("name").value = getVal(p, ['name', 'Name', 'NAME']);
-        document.getElementById("category_id").value = getVal(p, ['category_id', 'Category_ID', 'categoryID']);
-        document.getElementById("description").value = getVal(p, ['description', 'Description']);
+        const res = await fetch("/api/categories");
 
-        // Ищем предложение текущего юзера
-        const offers = p.offers || p.Offers || [];
-        const myOffer = offers.find(o => Number(getVal(o, ['seller_id', 'SellerID'])) === userId);
-        
-        if (myOffer) {
-            document.getElementById("price").value = getVal(myOffer, ['price', 'Price']);
-            document.getElementById("count").value = getVal(myOffer, ['count', 'Count']);
+        const categories = await res.json();
+
+        const select = document.getElementById("category_id");
+
+        if (!categories || categories.length === 0) {
+
+            select.innerHTML =
+                '<option value="">Сначала создайте категории</option>';
+
+            return false;
+        }
+
+        select.innerHTML =
+            '<option value="">-- Выберите категорию --</option>';
+
+        categories.forEach(cat => {
+
+            const option = document.createElement("option");
+
+            option.value = cat.id;
+            option.innerText = cat.name;
+
+            select.appendChild(option);
+        });
+
+        return true;
+
+    } catch (err) {
+
+        console.error(err);
+
+        document.getElementById("category_id").innerHTML =
+            '<option value="">Ошибка загрузки</option>';
+
+        return false;
+    }
+}
+
+/* Загрузка продавцов */
+async function loadSellers() {
+
+    if (!isAdmin) {
+        return true;
+    }
+
+    try {
+
+        const res = await fetch("/api/sellers");
+
+        const sellers = await res.json();
+
+        const select = document.getElementById("seller_id");
+
+        if (!sellers || sellers.length === 0) {
+
+            select.innerHTML =
+                '<option value="">Продавцов нет</option>';
+
+            return false;
+        }
+
+        select.innerHTML =
+            '<option value="">-- Выберите продавца --</option>';
+
+        sellers.forEach(seller => {
+
+            const option = document.createElement("option");
+
+            option.value = seller.id;
+
+            option.innerText =
+                `${seller.name || seller.username || "Продавец"} (ID: ${seller.id})`;
+
+            select.appendChild(option);
+        });
+
+        return true;
+
+    } catch (err) {
+
+        console.error(err);
+
+        document.getElementById("seller_id").innerHTML =
+            '<option value="">Ошибка загрузки</option>';
+
+        return false;
+    }
+}
+
+/* Инициализация формы */
+async function initForm() {
+
+    const [categoriesLoaded, sellersLoaded] = await Promise.all([
+        loadCategories(),
+        loadSellers()
+    ]);
+
+    if (isEdit && categoriesLoaded && sellersLoaded) {
+
+        document.getElementById("title").innerText =
+            "Редактировать товар";
+
+        document.getElementById("submitBtn").innerText =
+            "Сохранить";
+
+        try {
+
+            const res = await fetch("/api/product/" + productId, {
+                credentials: "include"
+            });
+
+            const p = await res.json();
+
+            document.getElementById("name").value =
+                p.name || "";
+
+            document.getElementById("description").value =
+                p.description || "";
+
+            document.getElementById("price").value =
+                p.price || "";
+
+            document.getElementById("count").value =
+                p.count || "";
+
+            if (p.category_id) {
+                document.getElementById("category_id").value =
+                    p.category_id;
+            }
+
+            if (isAdmin && p.seller_id) {
+                document.getElementById("seller_id").value =
+                    p.seller_id;
+            }
+
+        } catch (err) {
+            console.error(err);
         }
     }
 }
 
-document.getElementById("productForm").onsubmit = async (e) => {
+/* Submit */
+document.getElementById("productForm").addEventListener("submit", async function(e) {
+
     e.preventDefault();
-    const payload = {
-        name: document.getElementById("name").value,
-        category_id: parseInt(document.getElementById("category_id").value),
-        description: document.getElementById("description").value,
-        price: parseFloat(document.getElementById("price").value),
-        count: parseInt(document.getElementById("count").value)
+
+    const product = {
+        name: document.getElementById("name").value.trim(),
+
+        category_id: Number(
+            document.getElementById("category_id").value
+        ),
+
+        description: document.getElementById("description").value.trim(),
+
+        price: parseFloat(
+            document.getElementById("price").value
+        ),
+
+        count: parseInt(
+            document.getElementById("count").value
+        )
     };
 
-    const res = await fetch(productId ? "/api/product/edit/" + productId : "/api/addproduct", {
-        method: productId ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    });
+    if (isAdmin) {
 
-    if (res.ok) window.location.href = "/index";
-    else alert("Ошибка: " + await res.text());
-};
+        const sellerId =
+            document.getElementById("seller_id").value;
 
-init();
+        if (!sellerId) {
+
+            alert("Выберите продавца");
+
+            return;
+        }
+
+        product.seller_id = Number(sellerId);
+    }
+
+    let url = "/api/addproduct";
+    let method = "POST";
+
+    if (isEdit) {
+
+        url = "/api/product/edit/" + productId;
+
+        method = "PUT";
+    }
+
+    try {
+
+        const res = await fetch(url, {
+            method: method,
+            credentials: "include",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(product)
+        });
+
+        const message = document.getElementById("message");
+
+        if (res.ok) {
+
+            message.className = "message success";
+
+            message.innerText =
+                isEdit
+                    ? "Товар обновлён"
+                    : "Товар добавлен";
+
+            setTimeout(() => {
+                window.location.href = "/index";
+            }, 800);
+
+        } else {
+
+            const text = await res.text();
+
+            message.className = "message error";
+
+            message.innerText =
+                "Ошибка: " + text;
+        }
+
+    } catch (err) {
+
+        console.error(err);
+
+        document.getElementById("message").innerText =
+            "Ошибка сети";
+    }
+});
+
+/* Назад */
+function goBack() {
+
+    if (isEdit) {
+        window.location.href = "/product/" + productId;
+    } else {
+        window.location.href = "/index";
+    }
+}
+
+/* Запуск */
+initForm();
+
 </script>
+
+<script src="/static/js/websocket.js"></script>
+
 </body>
 </html>

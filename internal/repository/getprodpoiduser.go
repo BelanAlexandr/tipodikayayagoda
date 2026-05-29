@@ -6,7 +6,7 @@ import (
 	"tipodikayayagoda/internal/models"
 )
 
-func GetProdpoID(userID int, search string, limit int, offset int, sort string, categoryID int) ([]models.ProductCard, int) {
+func GetProdpoID(userID int, search string, limit int, offset int, sort string, categoryID int) ([]models.Product, int) {
 	var imgURL sql.NullString
 	var desc sql.NullString
 	var totalCount int
@@ -48,18 +48,18 @@ func GetProdpoID(userID int, search string, limit int, offset int, sort string, 
 	}
 	defer rows.Close()
 
-	var products []models.ProductCard
+	var products []models.Product
 	for rows.Next() {
-		var product models.ProductCard
+		var product models.Product
 
 		err := rows.Scan(
 			&product.ID,
 			&product.Name,
 			&desc,
-			&product.MinPrice,
-			&product.TotalCount,
+			&product.Price,
+			&product.Count,
 			&imgURL,
-			&product.CategoryID,
+			&product.Category_id,
 		)
 		if err != nil {
 			panic(err)
@@ -69,7 +69,7 @@ func GetProdpoID(userID int, search string, limit int, offset int, sort string, 
 			product.Description = desc.String
 		}
 		if imgURL.Valid {
-			product.ImageURL = imgURL.String
+			product.ImgURL = imgURL.String
 		}
 		products = append(products, product)
 	}

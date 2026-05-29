@@ -33,8 +33,8 @@ func IndexHandlerShow(w http.ResponseWriter, r *http.Request) {
 }
 
 type ProductsResponse struct {
-	Products   []models.ProductCard `json:"products"`
-	TotalCount int                  `json:"totalCount"`
+	Products   []models.Product `json:"products"`
+	TotalCount int              `json:"totalCount"`
 }
 
 func IndexHandler(w http.ResponseWriter, r *http.Request) {
