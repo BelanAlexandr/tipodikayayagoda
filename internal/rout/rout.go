@@ -30,6 +30,7 @@ func Routes() {
 	http.HandleFunc("/addseller", middelware.RoleMiddleware(models.RoleSeller)(handler.SellerOfferShow))
 	http.HandleFunc("/api/addseller/", middelware.RoleMiddleware(models.RoleSeller)(handler.SellerOffer))
 	http.HandleFunc("/api/addseller", middelware.RoleMiddleware(models.RoleSeller)(handler.AllProd))
+	http.HandleFunc("/api/offer/update/", middelware.RoleMiddleware(models.RoleSeller)(handler.OfferUpdate))
 
 	http.HandleFunc("/api/notifications/list", middelware.RoleMiddleware(models.RoleClient, models.RoleSeller, models.RoleAdmin)(handler.GetNotificationsList))
 	http.HandleFunc("/api/notifications/read/", middelware.RoleMiddleware(models.RoleClient, models.RoleSeller, models.RoleAdmin)(handler.MarkSingleNotificationRead))

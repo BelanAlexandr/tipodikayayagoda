@@ -7,6 +7,7 @@ import (
 	"strings"
 	"tipodikayayagoda/internal/middelware"
 	"tipodikayayagoda/internal/service"
+	"tipodikayayagoda/internal/storage"
 )
 
 func DeleteProductHandler(w http.ResponseWriter, r *http.Request) {
@@ -19,16 +20,17 @@ func DeleteProductHandler(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/product/delete/")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, "invalid id", 400)
+		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
 
-	err = service.DeleteProd(id, user.Role)
+	err = service.DeleteProd(storage.MinioClient, id, user.Role)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "deleted",
 	})

@@ -359,19 +359,22 @@ async function loadProducts() {
         container.innerHTML = "";
 
         products.forEach(p => {
+            // Безопасное определение ID (поддерживает и p.id, и p.ID)
+            const actualId = p.id || p.ID;
+
             const div = document.createElement("div");
             div.className = "card";
 
             let buttons = "";
 
             if (isSeller) {
-                buttons += `<button class="edit-btn" onclick="editProduct(${p.id})">Изменить</button>`;
+                buttons += `<button class="edit-btn" onclick="editProduct(${actualId})">Изменить</button>`;
             }
 
             if (isAdmin) {
                 buttons += `
-                    <button class="edit-btn" onclick="editProduct(${p.id})">Изменить</button>
-                    <button class="delete-btn" onclick="deleteProduct(${p.id})">Удалить</button>
+                    <button class="edit-btn" onclick="editProduct(${actualId})">Изменить</button>
+                    <button class="delete-btn" onclick="deleteProduct(${actualId})">Удалить</button>
                 `;
             }
 
@@ -402,7 +405,7 @@ async function loadProducts() {
                     📦 В наличии: ${countText}
                 </div>
 
-                <a href="/product/${p.id}" style="display:inline-block; margin-bottom:10px; color:#2196F3; text-decoration:none; font-weight:bold;">Открыть карточку</a>
+                <a href="/product/${actualId}" style="display:inline-block; margin-bottom:10px; color:#2196F3; text-decoration:none; font-weight:bold;">Открыть карточку</a>
 
                 <div style="margin-top:10px;">
                     ${buttons}

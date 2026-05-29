@@ -279,9 +279,13 @@ async function loadProduct() {
         img.src = (p.img_url && p.img_url.trim() !== "") ? p.img_url : "http://localhost:9000/images/default.png";
         img.style.display = "block";
 
-        if (isAdmin || isSeller) {
+        // КЛИК ПО КАРТИНКЕ РАЗРЕШЕН ТОЛЬКО АДМИНИСТРАТОРУ (Продавец исключен)
+        if (isAdmin) {
             img.classList.add("editable");
             img.onclick = () => el("imageInput").click();
+        } else {
+            img.classList.remove("editable");
+            img.onclick = null;
         }
 
         let infoHTML = "";
@@ -316,6 +320,7 @@ async function loadProduct() {
 
         el("info").innerHTML = infoHTML;
 
+        // --- ДИНАМИЧЕСКАЯ ГЕНЕРАЦИЯ КНОПОК ---
         let buttonsHTML = "";
         
         if (canBuy && currentProductOffers.length > 0) {
@@ -324,12 +329,12 @@ async function loadProduct() {
         if (isSeller) {
             const hasMyOffer = currentProductOffers.some(o => o.seller_id === userId);
             if (hasMyOffer) {
-                buttonsHTML += `<button class="edit" onclick="edit()">Редактировать предложение</button>`;
+                buttonsHTML += `<button class="edit" onclick="editOffer()">Редактировать предложение</button>`;
             }
         }
         if (isAdmin) {
             buttonsHTML += `
-                <button class="edit" onclick="edit()">Редактировать</button>
+                <button class="edit" onclick="editProduct()">Редактировать товар</button>
                 <button class="delete" onclick="deleteProduct(${p.id})">Удалить товар</button>
             `;
         }
@@ -342,7 +347,14 @@ async function loadProduct() {
     }
 }
 
+// ЗАГРУЗКА КАРТИНКИ (Добавлена строгая проверка прав)
 el("imageInput").addEventListener("change", async function () {
+    if (!isAdmin) {
+        alert("У вас нет прав для изменения изображения товара.");
+        this.value = ""; // Сбрасываем выбранный файл
+        return;
+    }
+
     const file = this.files[0];
     if (!file) return;
 
@@ -362,6 +374,7 @@ el("imageInput").addEventListener("change", async function () {
     loadProduct();
 });
 
+// --- ЛОГИКА ВЫЗОВА МОДАЛЬНОГО ОКНА ПОКУПКИ ---
 function buy() {
     const select = el("buySellerId");
     select.innerHTML = "";
@@ -393,7 +406,7 @@ async function confirmBuy() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count: count, seller_id: sellerId }) // <-- Отправляем seller_id
+        body: JSON.stringify({ count: count, seller_id: sellerId })
     });
 
     if (res.ok) { 
@@ -405,7 +418,14 @@ async function confirmBuy() {
     }
 }
 
-function edit() { window.location.href = "/addproduct?id=" + productId; }
+// --- НАВИГАЦИЯ И ПЕРЕНАПРАВЛЕНИЯ ---
+function editOffer() { 
+    window.location.href = "/addseller?id=" + productId; 
+}
+
+function editProduct() { 
+    window.location.href = "/addproduct?id=" + productId; 
+}
 
 async function deleteProduct(id) {
     if (!confirm("Удалить товар?")) return;

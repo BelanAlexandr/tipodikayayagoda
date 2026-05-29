@@ -2,7 +2,6 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -36,9 +35,6 @@ func SellerOffer(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Ошибка разбора JSON: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	fmt.Printf("Received Price: %f, Count: %d\n", req.Price, req.Count)
-
 	err = service.AddOffer(productID, req.Count, req.Price, user.ID)
 	if err != nil {
 		http.Error(w, "Ошибка добавления", http.StatusBadRequest)
