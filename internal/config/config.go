@@ -19,7 +19,7 @@ func LoadConfig() *Config {
 	return &Config{
 		ConnectionString: os.Getenv("DB_CONN_STR"),
 		JwtSecret:        os.Getenv("JWT_SECRET"),
-		Endpoint:         os.Getenv("END_POINT"),
+		Endpoint:         os.Getenv("MINIO_ENDPOINT"),
 		AccesKey:         os.Getenv("ACCES_KEY"),
 		SecretAccesKey:   os.Getenv("SECRET_ACCES_KEY"),
 	}
