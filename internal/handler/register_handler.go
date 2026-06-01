@@ -30,11 +30,11 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	req.Login = strings.TrimSpace(req.Login)
 	req.Password = strings.TrimSpace(req.Password)
 
-	if req.Role == models.RoleAdmin {
+	if req.Role == models.Roles.AdminID {
 		http.Error(w, "You cannot register as admin", 403)
 		return
 	}
-	err := service.Register(req, models.RoleClient)
+	err := service.Register(req, models.Roles.ClientID)
 	if err != nil {
 		http.Error(w, "Error registering user", 500)
 		return

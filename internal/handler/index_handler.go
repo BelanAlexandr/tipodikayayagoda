@@ -24,11 +24,11 @@ func IndexHandlerShow(w http.ResponseWriter, r *http.Request) {
 
 	tmpl.Execute(w, map[string]any{
 		"UserID":        user.ID,
-		"IsAdmin":       user.Role == models.RoleAdmin,
-		"IsSeller":      user.Role == models.RoleSeller,
-		"CanBuy":        user.Role == models.RoleClient,
-		"CanAddUser":    user.Role == models.RoleAdmin,
-		"CanAddProduct": user.Role == models.RoleAdmin || user.Role == models.RoleSeller,
+		"IsAdmin":       user.Role == models.Roles.AdminID,
+		"IsSeller":      user.Role == models.Roles.SellerID,
+		"CanBuy":        user.Role == models.Roles.ClientID,
+		"CanAddUser":    user.Role == models.Roles.AdminID,
+		"CanAddProduct": user.Role == models.Roles.AdminID || user.Role == models.Roles.SellerID,
 	})
 }
 

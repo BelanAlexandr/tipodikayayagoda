@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"tipodikayayagoda/internal/repository"
-	"tipodikayayagoda/internal/storage" // Пакет, где инициализирован MinioClient и BucketName
+	"tipodikayayagoda/internal/storage"
 
 	"github.com/minio/minio-go/v7"
 )

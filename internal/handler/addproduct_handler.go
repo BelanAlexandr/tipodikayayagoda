@@ -24,9 +24,9 @@ func AddProductHandlerShow(w http.ResponseWriter, r *http.Request) {
 
 	data := map[string]any{
 		"UserID":            user.ID,
-		"IsAdmin":           user.Role == models.RoleAdmin,
-		"IsSeller":          user.Role == models.RoleSeller,
-		"CanEditAnyProduct": user.Role == models.RoleAdmin,
+		"IsAdmin":           user.Role == models.Roles.AdminID,
+		"IsSeller":          user.Role == models.Roles.SellerID,
+		"CanEditAnyProduct": user.Role == models.Roles.AdminID,
 	}
 
 	if err := tmpl.Execute(w, data); err != nil {

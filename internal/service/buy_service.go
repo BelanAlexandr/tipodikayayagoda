@@ -7,7 +7,7 @@ import (
 )
 
 func BuyProduct(productID int, role int, count int, seller_id int) error {
-	if role != models.RoleClient {
+	if role != models.Roles.ClientID {
 		return errors.New("unauthorized")
 	}
 	pro, err := repository.GetProductpoIID(productID)

@@ -279,7 +279,6 @@ async function loadProduct() {
         img.src = (p.img_url && p.img_url.trim() !== "") ? p.img_url : "http://localhost:9000/images/default.png";
         img.style.display = "block";
 
-        // КЛИК ПО КАРТИНКЕ РАЗРЕШЕН ТОЛЬКО АДМИНИСТРАТОРУ (Продавец исключен)
         if (isAdmin) {
             img.classList.add("editable");
             img.onclick = () => el("imageInput").click();

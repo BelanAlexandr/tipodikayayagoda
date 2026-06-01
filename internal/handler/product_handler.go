@@ -17,9 +17,9 @@ func ProductShow(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value(middelware.UserKey).(middelware.UserContext)
 	data := map[string]any{
 		"UserID":   user.ID,
-		"IsAdmin":  user.Role == models.RoleAdmin,
-		"IsSeller": user.Role == models.RoleSeller,
-		"CanBuy":   user.Role == models.RoleClient,
+		"IsAdmin":  user.Role == models.Roles.AdminID,
+		"IsSeller": user.Role == models.Roles.SellerID,
+		"CanBuy":   user.Role == models.Roles.ClientID,
 	}
 
 	if err := tmpl.Execute(w, data); err != nil {

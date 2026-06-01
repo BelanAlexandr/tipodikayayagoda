@@ -1,6 +1,8 @@
 package utils
 
-import "github.com/golang-jwt/jwt/v5"
+import (
+	"github.com/golang-jwt/jwt/v5"
+)
 
 func ValidateToken(tokenString string) (jwt.MapClaims, error) {
 	claims := jwt.MapClaims{}
@@ -13,6 +15,5 @@ func ValidateToken(tokenString string) (jwt.MapClaims, error) {
 	if err != nil || !token.Valid {
 		return nil, err
 	}
-
 	return claims, nil
 }
