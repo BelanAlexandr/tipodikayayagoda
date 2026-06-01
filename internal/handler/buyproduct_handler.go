@@ -40,7 +40,7 @@ func BuyProductHandler(c *gin.Context) {
 
 	err = service.BuyProduct(id, userrole, req.Count, req.SellerID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{500})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	go Message(userID)

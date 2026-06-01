@@ -3,12 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"tipodikayayagoda/internal/config"
 	"tipodikayayagoda/internal/handler"
 	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/repository"
-	rout "tipodikayayagoda/internal/routes"
+	"tipodikayayagoda/internal/routes" // Убедитесь, что импортируете пакет с новой функцией SetupRouter
 	"tipodikayayagoda/internal/storage"
 	"tipodikayayagoda/internal/utils"
 	"tipodikayayagoda/pkg/database"
@@ -17,19 +16,25 @@ import (
 func main() {
 	handler.GlobalHub = handler.NewHub()
 
-	fmt.Println("Starting server at port 8080")
-
 	cfg := config.LoadConfig()
 	storage.InitMinio(cfg)
 	db := database.Conn(cfg)
+
 	if err := models.InitRoles(db); err != nil {
 		log.Fatalf("Не удалось инициализировать роли: %v", err)
 	}
+
 	utils.Init(cfg.JwtSecret)
 	repository.Init(db)
-	rout.Routes()
-	err := http.ListenAndServe(":8080", nil)
+
+	router := routes.Routes()
+
+	fmt.Println("Starting Gin server at port 8080")
+
+	// 2. Запускаем сервер через Gin.
+	// Метод Run сам под капотом вызывает http.ListenAndServe(":8080", router)
+	err := router.Run(":8080")
 	if err != nil {
-		fmt.Println("Error starting server:", err)
+		log.Fatalf("Error starting server: %v", err)
 	}
 }

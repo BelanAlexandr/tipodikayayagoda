@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter() *gin.Engine {
+func Routes() *gin.Engine {
 	r := gin.Default()
 	r.Static("/static", "./static")
 	r.GET("/register", handler.RegisterShow)
@@ -43,7 +43,7 @@ func SetupRouter() *gin.Engine {
 		adminOnly.POST("/api/adduser", handler.AdminRegister)
 
 		adminOnly.PUT("/api/product/edit", handler.UpdateProductHandler)
-		adminOnly.DELETE("/api/product/delete/id:", handler.DeleteProductHandler)
+		adminOnly.DELETE("/api/product/delete/:id", handler.DeleteProductHandler)
 		adminOnly.POST("/api/uploadimage", handler.UploadImageHandler)
 		adminOnly.POST("/api/category/add", handler.AddCategoryHandler)
 		adminOnly.GET("/api/sellers", handler.GetSeller)
