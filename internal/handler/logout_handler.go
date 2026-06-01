@@ -7,7 +7,7 @@ import (
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, &http.Cookie{
-		Name:   "token",
+		Name:   "tokenn",
 		Value:  "",
 		Path:   "/",
 		MaxAge: -1, // удалить cookie

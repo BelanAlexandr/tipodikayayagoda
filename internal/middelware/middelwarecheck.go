@@ -19,7 +19,7 @@ func RoleMiddleware(allowedRoles ...int) func(http.HandlerFunc) http.HandlerFunc
 
 		return func(w http.ResponseWriter, r *http.Request) {
 
-			cookie, err := r.Cookie("token")
+			cookie, err := r.Cookie("tokenn")
 			if err != nil {
 				http.Redirect(w, r, "/login", http.StatusSeeOther)
 				return

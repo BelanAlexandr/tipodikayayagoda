@@ -42,7 +42,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:  "token",
+		Name:  "tokenn",
 		Value: token,
 		Path:  "/",
 	})
