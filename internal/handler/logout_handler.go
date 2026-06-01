@@ -2,9 +2,11 @@ package handler
 
 import (
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
-func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+func LogoutHandler(c *gin.Context) {
 
 	http.SetCookie(w, &http.Cookie{
 		Name:   "tokenn",

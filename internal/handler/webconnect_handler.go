@@ -3,11 +3,13 @@ package handler
 import (
 	"log"
 	"net/http"
-	"tipodikayayagoda/internal/middelware"
+	"tipodikayayagoda/internal/middleware"
+
+	"github.com/gin-gonic/gin"
 )
 
-func WebConn(w http.ResponseWriter, r *http.Request) {
-	user, _ := r.Context().Value(middelware.UserKey).(middelware.UserContext)
+func WebConn(c *gin.Context) {
+	user, _ := r.Context().Value(middleware.UserKey).(middleware.UserContext)
 	if user.ID == 0 {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return

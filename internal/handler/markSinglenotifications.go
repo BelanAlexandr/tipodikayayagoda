@@ -5,18 +5,20 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"tipodikayayagoda/internal/middelware"
+	"tipodikayayagoda/internal/middleware"
 	"tipodikayayagoda/internal/repository"
+
+	"github.com/gin-gonic/gin"
 )
 
-func MarkSingleNotificationRead(w http.ResponseWriter, r *http.Request) {
+func MarkSingleNotificationRead(c *gin.Context) {
 
 	if r.Method != http.MethodPost {
 		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 		return
 	}
 
-	user, _ := r.Context().Value(middelware.UserKey).(middelware.UserContext)
+	user, _ := r.Context().Value(middleware.UserKey).(middleware.UserContext)
 	if user.ID == 0 {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return

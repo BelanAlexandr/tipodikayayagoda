@@ -5,13 +5,15 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
-	"tipodikayayagoda/internal/middelware"
+	"tipodikayayagoda/internal/middleware"
 	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
 
-func IndexHandlerShow(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value(middelware.UserKey).(middelware.UserContext)
+func IndexHandlerShow(c *gin.Context) {
+	user, ok := r.Context().Value(middleware.UserKey).(middleware.UserContext)
 	if !ok {
 		user.Role = 0
 	}
@@ -37,8 +39,8 @@ type ProductsResponse struct {
 	TotalCount int              `json:"totalCount"`
 }
 
-func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value(middelware.UserKey).(middelware.UserContext)
+func IndexHandler(c *gin.Context) {
+	user := r.Context().Value(middleware.UserKey).(middleware.UserContext)
 
 	search := r.URL.Query().Get("search")
 	sort := r.URL.Query().Get("sort")

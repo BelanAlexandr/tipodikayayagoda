@@ -1,51 +1,58 @@
 package handler
 
 import (
-	"encoding/json"
 	"html/template"
 	"net/http"
-	"tipodikayayagoda/internal/middelware"
 	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
 
-func AddProductHandlerShow(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value(middelware.UserKey).(middelware.UserContext)
+func AddProductHandlerShow(c *gin.Context) {
+	userIDValue, existsID := c.Get("userID")
+	userRoleValue, existsRole := c.Get("userRole")
+	if !existsID || !existsRole {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Данные авторизации не найдены"})
+		return
+	}
+	userrole, ok := userRoleValue.(int)
+	userID, ok := userIDValue.(int)
 	if !ok {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Неверный формат ID пользователя"})
 		return
 	}
 
 	tmpl, err := template.ParseFiles("internal/templates/addproduct.html")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	data := map[string]any{
-		"UserID":            user.ID,
-		"IsAdmin":           user.Role == models.Roles.AdminID,
-		"IsSeller":          user.Role == models.Roles.SellerID,
-		"CanEditAnyProduct": user.Role == models.Roles.AdminID,
+		"UserID":            userID,
+		"IsAdmin":           userrole == models.Roles.AdminID,
+		"IsSeller":          userrole == models.Roles.SellerID,
+		"CanEditAnyProduct": userrole == models.Roles.AdminID,
 	}
 
-	if err := tmpl.Execute(w, data); err != nil {
-		http.Error(w, "template error", http.StatusInternalServerError)
+	if err := tmpl.Execute(c.Writer, data); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 }
-func AddProductHandler(w http.ResponseWriter, r *http.Request) {
+func AddProductHandler(c *gin.Context) {
 	var req struct {
 		Name        string `json:"name"`
 		CategoryID  int    `json:"category_id"`
 		Description string `json:"description"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	if req.CategoryID <= 0 {
-		http.Error(w, "category_id is required and must be greater than 0", http.StatusBadRequest)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "должна быть выбрана категория"})
 		return
 	}
 	err := service.Addproduct(
@@ -54,12 +61,11 @@ func AddProductHandler(w http.ResponseWriter, r *http.Request) {
 		req.CategoryID,
 	)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "product created",
+	c.JSON(http.StatusOK, gin.H{
+		"message": "prdocut_created",
 	})
 }

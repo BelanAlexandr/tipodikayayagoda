@@ -3,12 +3,14 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"tipodikayayagoda/internal/middelware"
+	"tipodikayayagoda/internal/middleware"
 	"tipodikayayagoda/internal/repository"
+
+	"github.com/gin-gonic/gin"
 )
 
-func GetNotificationsList(w http.ResponseWriter, r *http.Request) {
-	user, _ := r.Context().Value(middelware.UserKey).(middelware.UserContext)
+func GetNotificationsList(c *gin.Context) {
+	user, _ := r.Context().Value(middleware.UserKey).(middleware.UserContext)
 	if user.ID == 0 {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return

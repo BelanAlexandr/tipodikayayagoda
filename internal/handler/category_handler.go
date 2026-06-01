@@ -3,12 +3,14 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"tipodikayayagoda/internal/middelware"
+	"tipodikayayagoda/internal/middleware"
 	"tipodikayayagoda/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
 
-func AddCategoryHandler(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value(middelware.UserKey).(middelware.UserContext)
+func AddCategoryHandler(c *gin.Context) {
+	user := r.Context().Value(middleware.UserKey).(middleware.UserContext)
 
 	var req struct {
 		Name string `json:"name"`
@@ -27,7 +29,7 @@ func AddCategoryHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 }
-func CategoriesListHandler(w http.ResponseWriter, r *http.Request) {
+func CategoriesListHandler(c *gin.Context) {
 	categories, err := service.GetCategories()
 	if err != nil {
 		http.Error(w, "server error", 500)

@@ -8,7 +8,7 @@ import (
 	"tipodikayayagoda/internal/handler"
 	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/repository"
-	"tipodikayayagoda/internal/rout"
+	rout "tipodikayayagoda/internal/routes"
 	"tipodikayayagoda/internal/storage"
 	"tipodikayayagoda/internal/utils"
 	"tipodikayayagoda/pkg/database"

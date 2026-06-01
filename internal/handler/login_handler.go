@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"strings"
 	"tipodikayayagoda/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
 
-func LoginShow(w http.ResponseWriter, r *http.Request) {
+func LoginShow(c *gin.Context) {
 
 	tmpl, err := template.ParseFiles("internal/templates/login.html")
 	if err != nil {
@@ -20,7 +22,7 @@ func LoginShow(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, nil)
 }
 
-func Login(w http.ResponseWriter, r *http.Request) {
+func Login(c *gin.Context) {
 
 	var req struct {
 		Login    string `json:"login"`

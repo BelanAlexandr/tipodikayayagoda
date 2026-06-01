@@ -5,12 +5,14 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"tipodikayayagoda/internal/middelware"
+	"tipodikayayagoda/internal/middleware"
 	"tipodikayayagoda/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
 
-func BuyProductHandler(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value(middelware.UserKey).(middelware.UserContext)
+func BuyProductHandler(c *gin.Context) {
+	user, ok := r.Context().Value(middleware.UserKey).(middleware.UserContext)
 	if !ok {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return

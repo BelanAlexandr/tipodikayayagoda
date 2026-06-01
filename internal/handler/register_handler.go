@@ -7,9 +7,11 @@ import (
 	"strings"
 	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
 
-func RegisterShow(w http.ResponseWriter, r *http.Request) {
+func RegisterShow(c *gin.Context) {
 
 	tmpl, err := template.ParseFiles("internal/templates/registr.html")
 	if err != nil {
@@ -22,7 +24,7 @@ func RegisterShow(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func Register(w http.ResponseWriter, r *http.Request) {
+func Register(c *gin.Context) {
 
 	var req models.User
 

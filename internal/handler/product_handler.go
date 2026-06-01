@@ -6,15 +6,17 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"tipodikayayagoda/internal/middelware"
+	"tipodikayayagoda/internal/middleware"
 	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
 
-func ProductShow(w http.ResponseWriter, r *http.Request) {
+func ProductShow(c *gin.Context) {
 	tmpl, _ := template.ParseFiles("internal/templates/product.html")
 
-	user := r.Context().Value(middelware.UserKey).(middelware.UserContext)
+	user := r.Context().Value(middleware.UserKey).(middleware.UserContext)
 	data := map[string]any{
 		"UserID":   user.ID,
 		"IsAdmin":  user.Role == models.Roles.AdminID,
@@ -27,7 +29,7 @@ func ProductShow(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
-func Product(w http.ResponseWriter, r *http.Request) {
+func Product(c *gin.Context) {
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/product/")
 	idStr = strings.Trim(idStr, "/")
 	idd, err := strconv.Atoi(idStr)
@@ -35,7 +37,7 @@ func Product(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid product id", http.StatusBadRequest)
 		return
 	}
-	user := r.Context().Value(middelware.UserKey).(middelware.UserContext)
+	user := r.Context().Value(middleware.UserKey).(middleware.UserContext)
 	product, err := service.GetProdPoID(idd, user.Role, user.ID)
 	if err != nil {
 		http.Error(w, "product not found", http.StatusNotFound)

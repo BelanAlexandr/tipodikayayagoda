@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"tipodikayayagoda/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
 
-func GetSeller(w http.ResponseWriter, r *http.Request) {
+func GetSeller(c *gin.Context) {
 	sellers, err := service.GetSellerId()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

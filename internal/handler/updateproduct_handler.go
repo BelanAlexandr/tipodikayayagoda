@@ -6,9 +6,11 @@ import (
 	"strconv"
 	"strings"
 	"tipodikayayagoda/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
 
-func UpdateProductHandler(w http.ResponseWriter, r *http.Request) {
+func UpdateProductHandler(c *gin.Context) {
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/product/edit/")
 
 	productID, err := strconv.Atoi(idStr)

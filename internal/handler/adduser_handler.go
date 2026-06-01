@@ -5,12 +5,14 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
-	"tipodikayayagoda/internal/middelware"
+	"tipodikayayagoda/internal/middleware"
 	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
 
-func AdminRegisterShow(w http.ResponseWriter, r *http.Request) {
+func AdminRegisterShow(c *gin.Context) {
 
 	tmpl, err := template.ParseFiles("internal/templates/registr.html")
 	if err != nil {
@@ -23,8 +25,8 @@ func AdminRegisterShow(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func AdminRegister(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value(middelware.UserKey).(middelware.UserContext)
+func AdminRegister(c *gin.Context) {
+	user := r.Context().Value(middleware.UserKey).(middleware.UserContext)
 	var req models.User
 
 	json.NewDecoder(r.Body).Decode(&req)

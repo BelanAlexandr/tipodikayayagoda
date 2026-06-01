@@ -6,9 +6,11 @@ import (
 	"strconv"
 	"strings"
 	"tipodikayayagoda/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
 
-func UploadImageHandler(w http.ResponseWriter, r *http.Request) {
+func UploadImageHandler(c *gin.Context) {
 
 	id := strings.TrimPrefix(r.URL.Path, "/api/uploadimage/")
 	idd, err := strconv.Atoi(id)

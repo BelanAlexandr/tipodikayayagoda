@@ -2,11 +2,12 @@ package handler
 
 import (
 	"encoding/json"
-	"net/http"
 	"tipodikayayagoda/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
 
-func AllProd(w http.ResponseWriter, r *http.Request) {
+func AllProd(c *gin.Context) {
 	prod := service.AllProd()
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(prod)

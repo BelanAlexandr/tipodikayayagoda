@@ -6,18 +6,20 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"tipodikayayagoda/internal/middelware"
+	"tipodikayayagoda/internal/middleware"
 	"tipodikayayagoda/internal/service"
+
+	"github.com/gin-gonic/gin"
 )
 
-func SellerOfferShow(w http.ResponseWriter, r *http.Request) {
+func SellerOfferShow(c *gin.Context) {
 
 	t, _ := template.ParseFiles("internal/templates/addseller.html")
 	t.Execute(w, nil)
 
 }
-func SellerOffer(w http.ResponseWriter, r *http.Request) {
-	user, _ := r.Context().Value(middelware.UserKey).(middelware.UserContext)
+func SellerOffer(c *gin.Context) {
+	user, _ := r.Context().Value(middleware.UserKey).(middleware.UserContext)
 
 	idStr := strings.TrimPrefix(r.URL.Path, "/api/addseller/")
 	productID, err := strconv.Atoi(idStr)
