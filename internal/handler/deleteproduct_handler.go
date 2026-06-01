@@ -1,11 +1,8 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
-	"tipodikayayagoda/internal/middleware"
 	"tipodikayayagoda/internal/service"
 	"tipodikayayagoda/internal/storage"
 
@@ -13,27 +10,28 @@ import (
 )
 
 func DeleteProductHandler(c *gin.Context) {
-	user, ok := r.Context().Value(middleware.UserKey).(middleware.UserContext)
-	if !ok {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+	userRoleValue, existsRole := c.Get("userRole")
+	if !existsRole {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Данные авторизации не найдены"})
 		return
 	}
-
-	idStr := strings.TrimPrefix(r.URL.Path, "/api/product/delete/")
+	userrole, ok := userRoleValue.(int)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Неверный формат ID пользователя"})
+		return
+	}
+	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, "invalid id", http.StatusBadRequest)
+		с.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
 
-	err = service.DeleteProd(storage.MinioClient, id, user.Role)
+	err = service.DeleteProd(storage.MinioClient, id, userrole)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		с.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "deleted",
-	})
+	c.JSON(http.StatusOK, gin.H{"messgae": "deleted"})
 }

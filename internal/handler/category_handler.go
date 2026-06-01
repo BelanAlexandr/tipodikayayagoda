@@ -1,41 +1,46 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
-	"tipodikayayagoda/internal/middleware"
 	"tipodikayayagoda/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 func AddCategoryHandler(c *gin.Context) {
-	user := r.Context().Value(middleware.UserKey).(middleware.UserContext)
+	userRoleValue, existsRole := c.Get("userRole")
+	if !existsRole {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Данные авторизации не найдены"})
+		return
+	}
+	userrole, ok := userRoleValue.(int)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Неверный формат ID пользователя"})
+		return
+	}
 
 	var req struct {
 		Name string `json:"name"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "bad request", 400)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	err := service.AddCategory(user.Role, req.Name)
+	err := service.AddCategory(userrole, req.Name)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusForbidden)
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	c.Writer.WriteHeader(http.StatusCreated)
 }
 func CategoriesListHandler(c *gin.Context) {
 	categories, err := service.GetCategories()
 	if err != nil {
-		http.Error(w, "server error", 500)
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(categories)
+	c.JSON(http.StatusOK, categories)
 }

@@ -1,30 +1,41 @@
 package handler
 
 import (
-	"encoding/json"
 	"html/template"
 	"net/http"
 	"strconv"
-	"strings"
-	"tipodikayayagoda/internal/middleware"
 	"tipodikayayagoda/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SellerOfferShow(c *gin.Context) {
+	t, err := template.ParseFiles("internal/templates/addseller.html")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка загрузки шаблона"})
+		return
+	}
 
-	t, _ := template.ParseFiles("internal/templates/addseller.html")
-	t.Execute(w, nil)
-
+	t.Execute(c.Writer, nil)
 }
-func SellerOffer(c *gin.Context) {
-	user, _ := r.Context().Value(middleware.UserKey).(middleware.UserContext)
 
-	idStr := strings.TrimPrefix(r.URL.Path, "/api/addseller/")
+func SellerOffer(c *gin.Context) {
+
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	userID, ok := userIDValue.(int)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Неверный формат ID пользователя"})
+		return
+	}
+
+	idStr := c.Param("id")
 	productID, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, "invalid id", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
 
@@ -32,18 +43,18 @@ func SellerOffer(c *gin.Context) {
 		Price float64 `json:"price"`
 		Count int     `json:"count"`
 	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Ошибка разбора JSON: " + err.Error()})
+		return
+	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Ошибка разбора JSON: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-	err = service.AddOffer(productID, req.Count, req.Price, user.ID)
+	err = service.AddOffer(productID, req.Count, req.Price, userID)
 	if err != nil {
-		http.Error(w, "Ошибка добавления", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Ошибка добавления"})
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+
+	c.JSON(http.StatusOK, gin.H{
 		"message": "product created",
 	})
 }

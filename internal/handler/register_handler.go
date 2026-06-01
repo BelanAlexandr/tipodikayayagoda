@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"html/template"
 	"net/http"
 	"strings"
@@ -12,35 +11,39 @@ import (
 )
 
 func RegisterShow(c *gin.Context) {
-
 	tmpl, err := template.ParseFiles("internal/templates/registr.html")
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	tmpl.Execute(w, map[string]any{
+	tmpl.Execute(c.Writer, map[string]any{
 		"IsAdmin": "false",
 	})
 }
 
 func Register(c *gin.Context) {
-
 	var req models.User
 
-	json.NewDecoder(r.Body).Decode(&req)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Некорректный JSON: " + err.Error()})
+		return
+	}
+
 	req.Login = strings.TrimSpace(req.Login)
 	req.Password = strings.TrimSpace(req.Password)
 
 	if req.Role == models.Roles.AdminID {
-		http.Error(w, "You cannot register as admin", 403)
+		c.JSON(http.StatusForbidden, gin.H{"error": "You cannot register as admin"})
 		return
 	}
+
 	err := service.Register(req, models.Roles.ClientID)
 	if err != nil {
-		http.Error(w, "Error registering user", 500)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error registering user"})
 		return
 	}
-	http.Redirect(w, r, "/login", 302)
 
+	c.Redirect(http.StatusFound, "/login")
 }

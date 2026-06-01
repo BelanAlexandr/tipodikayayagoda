@@ -1,31 +1,30 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 	"tipodikayayagoda/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 func UpdateProductHandler(c *gin.Context) {
-	idStr := strings.TrimPrefix(r.URL.Path, "/api/product/edit/")
 
+	idStr := c.Param("id")
 	productID, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, "invalid id", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
+
 	var req struct {
 		Name        string `json:"name"`
 		CategoryID  int    `json:"category_id"`
 		Description string `json:"description"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "bad body", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad body"})
 		return
 	}
 
@@ -36,12 +35,11 @@ func UpdateProductHandler(c *gin.Context) {
 		req.CategoryID,
 	)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	c.JSON(http.StatusOK, gin.H{
 		"message": "updated",
 	})
 }

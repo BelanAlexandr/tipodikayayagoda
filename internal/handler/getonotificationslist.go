@@ -1,28 +1,32 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
-	"tipodikayayagoda/internal/middleware"
 	"tipodikayayagoda/internal/repository"
 
 	"github.com/gin-gonic/gin"
 )
 
 func GetNotificationsList(c *gin.Context) {
-	user, _ := r.Context().Value(middleware.UserKey).(middleware.UserContext)
-	if user.ID == 0 {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	userIDValue, existsID := c.Get("userID")
+	if !existsID {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Данные авторизации не найдены"})
+		return
+	}
+	userID, ok := userIDValue.(int)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Неверный формат ID пользователя"})
+		return
+	}
+	if userID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Данные авторизации не найдены"})
 		return
 	}
 
-	notificationsFromDB, err := repository.GetNotificationPoId(user.ID)
+	notificationsFromDB, err := repository.GetNotificationPoId(userID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"items": notificationsFromDB,
-	})
+	c.JSON(http.StatusOK, gin.H{"items": notificationsFromDB})
 }

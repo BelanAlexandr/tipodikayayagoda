@@ -7,13 +7,6 @@ import (
 )
 
 func LogoutHandler(c *gin.Context) {
-
-	http.SetCookie(w, &http.Cookie{
-		Name:   "tokenn",
-		Value:  "",
-		Path:   "/",
-		MaxAge: -1, // удалить cookie
-	})
-
-	http.Redirect(w, r, "/login", http.StatusSeeOther)
+	c.SetCookie("tokenn", " ", -1, "/", "", false, true)
+	c.Redirect(http.StatusSeeOther, "/login")
 }

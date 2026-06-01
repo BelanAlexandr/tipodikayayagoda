@@ -1,12 +1,9 @@
 package handler
 
 import (
-	"encoding/json"
 	"html/template"
 	"net/http"
 	"strconv"
-	"strings"
-	"tipodikayayagoda/internal/middleware"
 	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/service"
 
@@ -14,36 +11,51 @@ import (
 )
 
 func ProductShow(c *gin.Context) {
-	tmpl, _ := template.ParseFiles("internal/templates/product.html")
-
-	user := r.Context().Value(middleware.UserKey).(middleware.UserContext)
-	data := map[string]any{
-		"UserID":   user.ID,
-		"IsAdmin":  user.Role == models.Roles.AdminID,
-		"IsSeller": user.Role == models.Roles.SellerID,
-		"CanBuy":   user.Role == models.Roles.ClientID,
+	tmpl, err := template.ParseFiles("internal/templates/product.html")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка загрузки шаблона"})
+		return
 	}
 
-	if err := tmpl.Execute(w, data); err != nil {
-		http.Error(w, "template error", http.StatusInternalServerError)
+	userID, _ := c.Get("userID")
+	userRole, _ := c.Get("userRole")
+
+	uid, _ := userID.(int)
+	role, _ := userRole.(int)
+
+	data := map[string]any{
+		"UserID":   uid,
+		"IsAdmin":  role == models.Roles.AdminID,
+		"IsSeller": role == models.Roles.SellerID,
+		"CanBuy":   role == models.Roles.ClientID,
+	}
+
+	if err := tmpl.Execute(c.Writer, data); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "template error"})
 		return
 	}
 }
+
 func Product(c *gin.Context) {
-	idStr := strings.TrimPrefix(r.URL.Path, "/api/product/")
-	idStr = strings.Trim(idStr, "/")
+
+	idStr := c.Param("id")
 	idd, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, "invalid product id", http.StatusBadRequest)
-		return
-	}
-	user := r.Context().Value(middleware.UserKey).(middleware.UserContext)
-	product, err := service.GetProdPoID(idd, user.Role, user.ID)
-	if err != nil {
-		http.Error(w, "product not found", http.StatusNotFound)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product id"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(product)
+	userID, _ := c.Get("userID")
+	userRole, _ := c.Get("userRole")
+
+	uid, _ := userID.(int)
+	role, _ := userRole.(int)
+
+	product, err := service.GetProdPoID(idd, role, uid)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, product)
 }

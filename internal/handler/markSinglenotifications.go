@@ -4,45 +4,38 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
-	"tipodikayayagoda/internal/middleware"
 	"tipodikayayagoda/internal/repository"
 
 	"github.com/gin-gonic/gin"
 )
 
 func MarkSingleNotificationRead(c *gin.Context) {
-
-	if r.Method != http.MethodPost {
-		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	user, _ := r.Context().Value(middleware.UserKey).(middleware.UserContext)
-	if user.ID == 0 {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	userID, ok := userIDValue.(int)
+	if !ok || userID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	notifIDStr := strings.TrimPrefix(r.URL.Path, "/api/notifications/read/")
-	notifIDStr = strings.TrimSpace(notifIDStr)
-
-	notifIDStr = strings.TrimSuffix(notifIDStr, "/")
+	notifIDStr := c.Param("id")
 
 	notifID, err := strconv.Atoi(notifIDStr)
 	if err != nil || notifID <= 0 {
-		http.Error(w, "Неверный ID уведомления", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Неверный ID уведомления"})
 		return
 	}
 
-	err = repository.MarkNotificationAsRead(notifID, user.ID)
+	err = repository.MarkNotificationAsRead(notifID, userID)
 	if err != nil {
 		log.Println("Ошибка при чтении уведомления в БД:", err)
-		http.Error(w, "Ошибка сервера при обновлении статуса", http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сервера при обновлении статуса"})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status":"success"}`))
+	c.JSON(http.StatusOK, gin.H{"status": "success"})
 }

@@ -43,7 +43,7 @@ func SetupRouter() *gin.Engine {
 		adminOnly.POST("/api/adduser", handler.AdminRegister)
 
 		adminOnly.PUT("/api/product/edit", handler.UpdateProductHandler)
-		adminOnly.DELETE("/api/product/delete", handler.DeleteProductHandler)
+		adminOnly.DELETE("/api/product/delete/id:", handler.DeleteProductHandler)
 		adminOnly.POST("/api/uploadimage", handler.UploadImageHandler)
 		adminOnly.POST("/api/category/add", handler.AddCategoryHandler)
 		adminOnly.GET("/api/sellers", handler.GetSeller)
@@ -68,7 +68,7 @@ func SetupRouter() *gin.Engine {
 	clientOnly := r.Group("/")
 	clientOnly.Use(middleware.RoleMiddleware(client))
 	{
-		clientOnly.POST("/api/product/buy", handler.BuyProductHandler)
+		clientOnly.POST("/api/product/buy/:id", handler.BuyProductHandler)
 	}
 
 	return r

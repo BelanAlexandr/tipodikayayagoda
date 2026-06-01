@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 	"tipodikayayagoda/internal/service"
 
@@ -11,10 +10,9 @@ import (
 func GetSeller(c *gin.Context) {
 	sellers, err := service.GetSellerId()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	c.JSON(http.StatusOK, sellers)
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(sellers)
 }

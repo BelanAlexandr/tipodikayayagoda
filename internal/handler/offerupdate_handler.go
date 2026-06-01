@@ -1,48 +1,48 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
-	"tipodikayayagoda/internal/middleware"
 	"tipodikayayagoda/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 func OfferUpdate(c *gin.Context) {
-	user, ok := r.Context().Value(middleware.UserKey).(middleware.UserContext)
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	userID, ok := userIDValue.(int)
 	if !ok {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Неверный формат ID пользователя"})
 		return
 	}
-	if r.Method != http.MethodPut {
-		http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
-		return
-	}
-	idStr := strings.TrimPrefix(r.URL.Path, "/api/offer/update/")
+
+	idStr := c.Param("id")
 	productID, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, "Некорректный ID товара", http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Некорректный ID товара"})
 		return
 	}
+
 	var req struct {
-		Price float64 `json:"price"`
-		Count int     `json:"count"`
+		Price float64 `json:"price" binding:"required"`
+		Count int     `json:"count" binding:"required"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Ошибка разбора JSON: "+err.Error(), http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Ошибка разбора JSON: " + err.Error()})
 		return
 	}
-	err = service.UpdateOffer(productID, req.Price, req.Count, user.ID)
+
+	err = service.UpdateOffer(productID, req.Price, req.Count, userID)
 	if err != nil {
-		http.Error(w, "Ошибка обновления в базе данных: "+err.Error(), http.StatusInternalServerError)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка обновления в базе данных: " + err.Error()})
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{
+
+	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "Предложение успешно обновлено",
 	})

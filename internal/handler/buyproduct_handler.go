@@ -1,27 +1,31 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
-	"tipodikayayagoda/internal/middleware"
 	"tipodikayayagoda/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 func BuyProductHandler(c *gin.Context) {
-	user, ok := r.Context().Value(middleware.UserKey).(middleware.UserContext)
+	userIDValue, existsID := c.Get("userID")
+	userRoleValue, existsRole := c.Get("userRole")
+	if !existsID || !existsRole {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Данные авторизации не найдены"})
+		return
+	}
+	userrole, ok := userRoleValue.(int)
+	userID, ok := userIDValue.(int)
 	if !ok {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Неверный формат ID пользователя"})
 		return
 	}
 
-	idStr := strings.TrimPrefix(r.URL.Path, "/api/product/buy/")
+	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, "invalid id", 400)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -29,18 +33,18 @@ func BuyProductHandler(c *gin.Context) {
 		Count    int `json:"count"`
 		SellerID int `json:"seller_id"`
 	}
-	err = json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		http.Error(w, "invalid request body", 400)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	err = service.BuyProduct(id, user.Role, req.Count, req.SellerID)
+
+	err = service.BuyProduct(id, userrole, req.Count, req.SellerID)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		c.JSON(http.StatusInternalServerError, gin.H{500})
 		return
 	}
-	go Message(user.ID)
-	json.NewEncoder(w).Encode(map[string]string{
-		"message": "bought",
+	go Message(userID)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "prdocut_created",
 	})
 }

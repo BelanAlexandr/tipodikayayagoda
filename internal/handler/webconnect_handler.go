@@ -3,34 +3,41 @@ package handler
 import (
 	"log"
 	"net/http"
-	"tipodikayayagoda/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
 func WebConn(c *gin.Context) {
-	user, _ := r.Context().Value(middleware.UserKey).(middleware.UserContext)
-	if user.ID == 0 {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	ws, err := upgrader.Upgrade(w, r, nil)
+	userID, ok := userIDValue.(int)
+	if !ok || userID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Println("Ошибка WebSocket:", err)
+
 		return
 	}
 
 	GlobalHub.mutex.Lock()
-	if oldWs, exists := GlobalHub.clients[user.ID]; exists {
+	if oldWs, exists := GlobalHub.clients[userID]; exists {
 		oldWs.Close()
 	}
-	GlobalHub.clients[user.ID] = ws
+	GlobalHub.clients[userID] = ws
 	GlobalHub.mutex.Unlock()
 
 	defer func() {
 		GlobalHub.mutex.Lock()
-		delete(GlobalHub.clients, user.ID)
+		delete(GlobalHub.clients, userID)
 		GlobalHub.mutex.Unlock()
 		ws.Close()
 	}()

@@ -1,10 +1,8 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 	"tipodikayayagoda/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -12,30 +10,33 @@ import (
 
 func UploadImageHandler(c *gin.Context) {
 
-	id := strings.TrimPrefix(r.URL.Path, "/api/uploadimage/")
+	id := c.Param("id")
 	idd, err := strconv.Atoi(id)
-
 	if err != nil {
-		http.Error(w, "invalid product ID", 400)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product ID"})
 		return
 	}
-	r.ParseMultipartForm(10 << 20)
 
-	file, header, err := r.FormFile("image")
+	header, err := c.FormFile("image")
 	if err != nil {
-		http.Error(w, "image is required", 400)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "image is required"})
+		return
+	}
+
+	file, err := header.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to open image"})
 		return
 	}
 	defer file.Close()
 
 	url, err := service.UploadImage(idd, file, header)
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	c.JSON(http.StatusOK, gin.H{
 		"url": url,
 	})
 }

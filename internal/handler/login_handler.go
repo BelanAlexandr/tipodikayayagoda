@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
-	"fmt"
 	"html/template"
 	"net/http"
 	"strings"
@@ -15,11 +13,11 @@ func LoginShow(c *gin.Context) {
 
 	tmpl, err := template.ParseFiles("internal/templates/login.html")
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
-	tmpl.Execute(w, nil)
+	tmpl.Execute(c.Writer, nil)
 }
 
 func Login(c *gin.Context) {
@@ -29,25 +27,19 @@ func Login(c *gin.Context) {
 		Password string `json:"password"`
 	}
 
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	req.Login = strings.TrimSpace(req.Login)
 	req.Password = strings.TrimSpace(req.Password)
 	token, err := service.Login(req.Login, req.Password)
 	if err != nil {
-		http.Error(w, "error logging in user", http.StatusUnauthorized)
-		fmt.Println("Login error:", err)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:  "tokenn",
-		Value: token,
-		Path:  "/",
-	})
+	c.SetCookie("tokenn", token, 3600, "/", "", false, true)
 
-	http.Redirect(w, r, "/index", http.StatusFound)
+	c.Redirect(http.StatusFound, "/index")
 }
