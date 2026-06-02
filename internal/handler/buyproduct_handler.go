@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +12,7 @@ import (
 func BuyProductHandler(c *gin.Context) {
 	userIDValue, existsID := c.Get("userID")
 	userRoleValue, existsRole := c.Get("userRole")
-	if !existsID || !existsRole {
+	if !existsID || !existsRole || userRoleValue.(int) != models.RoleClient {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Данные авторизации не найдены"})
 		return
 	}

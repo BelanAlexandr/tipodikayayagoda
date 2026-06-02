@@ -12,7 +12,7 @@ import (
 func AddProductHandlerShow(c *gin.Context) {
 	userIDValue, existsID := c.Get("userID")
 	userRoleValue, existsRole := c.Get("userRole")
-	if !existsID || !existsRole {
+	if !existsID || !existsRole || (userRoleValue.(int) != models.RoleAdmin && userRoleValue.(int) != models.RoleSeller) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Данные авторизации не найдены"})
 		return
 	}
@@ -42,6 +42,11 @@ func AddProductHandlerShow(c *gin.Context) {
 	}
 }
 func AddProductHandler(c *gin.Context) {
+	userRoleValue, existsRole := c.Get("userRole")
+	if !existsRole || (userRoleValue.(int) != models.RoleAdmin && userRoleValue.(int) != models.RoleSeller) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Данные авторизации не найдены"})
+		return
+	}
 	var req struct {
 		Name        string `json:"name"`
 		CategoryID  int    `json:"category_id"`

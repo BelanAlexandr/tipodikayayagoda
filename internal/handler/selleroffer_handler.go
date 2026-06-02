@@ -32,7 +32,7 @@ func SellerOffer(c *gin.Context) {
 		return
 	}
 
-	idStr := c.Param("id")
+	idStr := c.Query("id")
 	productID, err := strconv.Atoi(idStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})

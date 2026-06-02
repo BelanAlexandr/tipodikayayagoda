@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -9,7 +10,7 @@ import (
 
 func AddCategoryHandler(c *gin.Context) {
 	userRoleValue, existsRole := c.Get("userRole")
-	if !existsRole {
+	if !existsRole || userRoleValue.(int) != models.RoleAdmin {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Данные авторизации не найдены"})
 		return
 	}
@@ -36,6 +37,11 @@ func AddCategoryHandler(c *gin.Context) {
 	c.Writer.WriteHeader(http.StatusCreated)
 }
 func CategoriesListHandler(c *gin.Context) {
+	_, existsRole := c.Get("userRole")
+	if !existsRole {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Данные авторизации не найдены"})
+		return
+	}
 	categories, err := service.GetCategories()
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})

@@ -130,7 +130,7 @@
 
         .offers-table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: border-collapse;
             margin-top: 15px;
             margin-bottom: 25px;
             font-size: 14px;
@@ -255,14 +255,23 @@ const isAdmin = "{{.IsAdmin}}".trim() === "true";
 const isSeller = "{{.IsSeller}}".trim() === "true";
 const canBuy = "{{.CanBuy}}".trim() === "true";
 
-const productId = window.location.pathname.split("/").filter(Boolean).pop();
+// ИСПРАВЛЕНО: Теперь забираем ID из Query-параметров (?id=1000001) вместо путей URL
+const params = new URLSearchParams(window.location.search);
+const productId = params.get("id"); 
+
 let currentProductOffers = []; 
 
 function el(id) { return document.getElementById(id); }
 
 async function loadProduct() {
+    if (!productId) {
+        el("title").innerText = "Идентификатор товара отсутствует в URL";
+        return;
+    }
+
     try {
-        const res = await fetch(`/api/product/${productId}`, { credentials: "include" });
+        // ИСПРАВЛЕНО: Запрос отправляется на роут /api/product/?id=1000001
+        const res = await fetch(`/api/product/?id=${productId}`, { credentials: "include" });
         if (!res.ok) {
             el("title").innerText = "Товар не найден";
             return;
@@ -346,11 +355,11 @@ async function loadProduct() {
     }
 }
 
-// ЗАГРУЗКА КАРТИНКИ (Добавлена строгая проверка прав)
+// ЗАГРУЗКА КАРТИНКИ
 el("imageInput").addEventListener("change", async function () {
     if (!isAdmin) {
         alert("У вас нет прав для изменения изображения товара.");
-        this.value = ""; // Сбрасываем выбранный файл
+        this.value = ""; 
         return;
     }
 
@@ -360,11 +369,10 @@ el("imageInput").addEventListener("change", async function () {
     const formData = new FormData();
     formData.append("image", file);
 
+    // Оставляем в пути, так как роут бэкенда ожидает ID в пути: /api/uploadimage/:id
     const res = await fetch("/api/uploadimage/" + productId, { method: "POST", body: formData, credentials: "include" });
     if (!res.ok) { alert("Ошибка загрузки картинки"); return; }
 
-    const data = await res.json();
-  
     loadProduct();
 });
 
@@ -396,6 +404,7 @@ async function confirmBuy() {
     if (!count || count <= 0) { el("buyError").innerText = "Введите корректное количество"; return; }
     if (!sellerId) { el("buyError").innerText = "Выберите продавца"; return; }
 
+    // Роут бэкенда ожидает ID в пути: /api/product/buy/:id
     const res = await fetch("/api/product/buy/" + productId, {
         method: "POST",
         credentials: "include",
@@ -413,6 +422,7 @@ async function confirmBuy() {
 }
 
 // --- НАВИГАЦИЯ И ПЕРЕНАПРАВЛЕНИЯ ---
+// ИСПРАВЛЕНО: Ссылки теперь строятся через query-параметр ?id=
 function editOffer() { 
     window.location.href = "/addseller?id=" + productId; 
 }
@@ -423,6 +433,7 @@ function editProduct() {
 
 async function deleteProduct(id) {
     if (!confirm("Удалить товар?")) return;
+    // Роут бэкенда ожидает ID в пути: /api/product/delete/:id
     await fetch("/api/product/delete/" + id, { method: "DELETE", credentials: "include" });
     window.location.href = "/index";
 }

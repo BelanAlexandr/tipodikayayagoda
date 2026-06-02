@@ -38,7 +38,7 @@ func ProductShow(c *gin.Context) {
 
 func Product(c *gin.Context) {
 
-	idStr := c.Param("id")
+	idStr := c.Query("id")
 	idd, err := strconv.Atoi(idStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product id"})

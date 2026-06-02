@@ -101,7 +101,7 @@
     const resultsContainer = document.getElementById("searchResults");
 
     function goBack() {
-        window.location.href = isEdit ? `/product?id=${selectedProductId}` : "/index";
+        window.location.href = isEdit ? `/product/?id=${selectedProductId}` : "/index";
     }
 
     async function fetchCategories() {
@@ -244,8 +244,10 @@
             count: parseInt(document.getElementById("count").value)
         };
 
-        let method = isEdit ? "PUT" : "POST"; 
-        let url = isEdit ? `/api/offer/update/${selectedProductId}` : `/api/addseller/${selectedProductId}`;
+      let method = isEdit ? "PUT" : "POST"; 
+let url = isEdit 
+    ? `/api/offer/update/${selectedProductId}` 
+    : `/api/addseller/?id=${selectedProductId}`;
 
         try {
             const res = await fetch(url, {
@@ -280,7 +282,7 @@
 
             // Если мы редактируем, запрашиваем конкретный товар по ID с сервера
             try {
-                const res = await fetch(`/api/product?id=${selectedProductId}`);
+                const res = await fetch(`/api/product/?id=${selectedProductId}`);
                 if (res.ok) {
                     const product = await res.json();
                     fillProductData(product);

@@ -9,6 +9,11 @@ import (
 )
 
 func AllProd(c *gin.Context) {
+	_, existsRole := c.Get("userRole")
+	if !existsRole {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Данные авторизации не найдены"})
+		return
+	}
 	searchQuery := c.Query("search")
 	prod, err := service.AllProd(searchQuery)
 	if err != nil {

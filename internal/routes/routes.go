@@ -18,38 +18,15 @@ func Routes() *gin.Engine {
 
 	auth := r.Group("/")
 	auth.Use(middleware.RoleMiddleware())
-	{
-		auth.GET("/index", handler.IndexHandlerShow)
-		auth.GET("/api/index", handler.IndexHandler)
 
-		auth.GET("/product/:id", handler.ProductShow)
-		auth.GET("/api/product/:id", handler.Product)
+	RegisterPageRoutes(auth)
 
-		auth.GET("/api/notifications/list", handler.GetNotificationsList)
-		auth.POST("/api/notifications/read/:id", handler.MarkSingleNotificationRead)
-		auth.GET("/ws", handler.WebConn)
+	auth.GET("/ws", handler.WebConn)
 
-		auth.GET("/addproduct", handler.AddProductHandlerShow)
-		auth.POST("/api/addproduct", handler.AddProductHandler)
-		auth.GET("/adduser", handler.AdminRegisterShow)
-		auth.POST("/api/adduser", handler.AdminRegister)
+	api := auth.Group("/api")
 
-		auth.PUT("/api/product/edit/:id", handler.UpdateProductHandler)
-		auth.DELETE("/api/product/delete/:id", handler.DeleteProductHandler)
-		auth.POST("/api/uploadimage/:id", handler.UploadImageHandler)
-		auth.POST("/api/category/add", handler.AddCategoryHandler)
-		auth.GET("/api/sellers", handler.GetSeller)
-
-		auth.GET("/addseller", handler.SellerOfferShow)
-
-		auth.POST("/api/addseller/:id", handler.SellerOffer)
-		auth.GET("/api/addseller/all", handler.AllProd)
-		auth.PUT("/api/offer/update", handler.OfferUpdate)
-
-		auth.GET("/api/categories", handler.CategoriesListHandler)
-
-		auth.POST("/api/product/buy/:id", handler.BuyProductHandler)
-	}
-
+	RegisterProductRoutes(api)
+	RegisterSellerRoutes(api)
+	RegisterNotificationRoutes(api)
 	return r
 }
