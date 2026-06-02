@@ -26,7 +26,7 @@ func Routes() *gin.Engine {
 		auth.GET("/api/product/:id", handler.Product)
 
 		auth.GET("/api/notifications/list", handler.GetNotificationsList)
-		auth.POST("/api/notifications/read", handler.MarkSingleNotificationRead)
+		auth.POST("/api/notifications/read/:id", handler.MarkSingleNotificationRead)
 		auth.GET("/ws", handler.WebConn)
 
 		auth.GET("/addproduct", handler.AddProductHandlerShow)
@@ -42,7 +42,7 @@ func Routes() *gin.Engine {
 
 		auth.GET("/addseller", handler.SellerOfferShow)
 
-		auth.POST("/api/addseller", handler.SellerOffer)
+		auth.POST("/api/addseller/:id", handler.SellerOffer)
 		auth.GET("/api/addseller/all", handler.AllProd)
 		auth.PUT("/api/offer/update", handler.OfferUpdate)
 

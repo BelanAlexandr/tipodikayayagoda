@@ -15,6 +15,14 @@
         body {
             background: #f5f5f5;
             padding: 30px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Главный контейнер для контента, чтобы зафиксировать пагинацию внизу */
+        .main-content {
+            flex: 1 0 auto;
         }
 
         .header {
@@ -57,33 +65,54 @@
             cursor: pointer;
         }
 
+        /* Исправленная сетка: гарантирует ровные ряды */
         .products-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 20px;
+            gap: 24px;
+            margin-bottom: 30px;
         }
 
+        /* Карточка с фиксированной структурой, чтобы ничего не уезжало */
         .card {
             background: white;
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            height: 450px; /* Стабильная высота карточки */
+            justify-content: space-between;
         }
 
         .product-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis; /* Обрезает длинные названия */
         }
 
         .description {
             color: #555;
+            font-size: 14px;
             margin-bottom: 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3; /* Показывает строго максимум 3 строки описания */
+            -webkit-box-orient: vertical;  
+            overflow: hidden;
+            text-overflow: ellipsis;
+            height: 48px; /* Фиксированная высота под описание */
         }
 
         .info {
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             line-height: 1.5;
+            font-size: 14px;
+            background: #f9f9f9;
+            padding: 8px;
+            border-radius: 6px;
         }
 
         button {
@@ -93,30 +122,38 @@
             cursor: pointer;
         }
 
-        .edit-btn { background: #ff9800; color: white; }
+        .edit-btn { background: #ff9800; color: white; margin-right: 5px; }
         .delete-btn { background: #f44336; color: white; }
 
-        /* ===== СТИЛИ ПАГИНАЦИИ ===== */
+        /* ===== СТИЛИ ПАГИНАЦИИ (ЗАФИКСИРОВАНЫ) ===== */
         .pagination-container {
+            flex-shrink: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 8px;
             margin-top: 40px;
+            margin-bottom: 20px;
+            padding: 10px;
+            width: 100%;
         }
 
         .pagination-btn {
             background: white;
             color: #333;
             border: 1px solid #ccc;
-            padding: 8px 14px;
+            padding: 8px 16px;
             border-radius: 6px;
+            font-size: 14px;
             transition: all 0.2s ease;
+            min-width: 40px;
+            text-align: center;
         }
 
         .pagination-btn:hover:not(:disabled) {
-            background: #f0f0f0;
-            border-color: #999;
+            background: #2196F3;
+            color: white;
+            border-color: #2196F3;
         }
 
         .pagination-btn.active {
@@ -129,6 +166,7 @@
         .pagination-btn:disabled {
             background: #e0e0e0;
             color: #999;
+            border-color: #ccc;
             cursor: not-allowed;
         }
 
@@ -193,53 +231,55 @@
 
 <body>
 
-<div class="header">
-    <div style="display: flex; align-items: center; gap: 20px;">
-        <h2>Главная</h2>
-        
-        <div class="notification-bell-container" id="bellContainer">
-            <span id="bell-icon">🔔</span>
+<div class="main-content">
+    <div class="header">
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <h2>Главная</h2>
+            
+            <div class="notification-bell-container" id="bellContainer">
+                <span id="bell-icon">🔔</span>
 
-            <div id="notifications-dropdown">
-                <div class="dropdown-header">
-                    <span>Уведомления</span>
-                </div>
-                <div id="notifications-list">
-                    <div class="empty-notifications">Нет новых уведомлений</div>
+                <div id="notifications-dropdown">
+                    <div class="dropdown-header">
+                        <span>Уведомления</span>
+                    </div>
+                    <div id="notifications-list">
+                        <div class="empty-notifications">Нет новых уведомлений</div>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <div class="header-buttons" id="headerButtons"></div>
     </div>
 
-    <div class="header-buttons" id="headerButtons"></div>
+    <h3 style="margin-bottom:20px;">Товары</h3>
+
+    <div style="margin-bottom:20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <input 
+            type="text"
+            id="searchInput"
+            placeholder="Поиск товара..."
+            style="padding:10px; width:250px; border:1px solid #ccc; border-radius:8px;"
+        >
+        
+        <select id="categoryInput" onchange="searchProducts()" style="padding:10px; border:1px solid #ccc; border-radius:8px; background: white; cursor: pointer;">
+            <option value="0">Все категории</option>
+        </select>
+        
+        <select id="sortInput" onchange="searchProducts()" style="padding:10px; border:1px solid #ccc; border-radius:8px; background: white; cursor: pointer;">
+            <option value="new">Сначала новинки</option>
+            <option value="price_asc">💰 По возрастанию цены</option>
+            <option value="price_desc">💰 По убыванию цены</option>
+        </select>
+
+        <button onclick="searchProducts()" style="background:#2196F3; color:white; padding: 10px 20px;">
+            Найти
+        </button>
+    </div>
+
+    <div id="products">Загрузка...</div>
 </div>
-
-<h3 style="margin-bottom:20px;">Товары</h3>
-
-<div style="margin-bottom:20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-    <input 
-        type="text"
-        id="searchInput"
-        placeholder="Поиск товара..."
-        style="padding:10px; width:250px; border:1px solid #ccc; border-radius:8px;"
-    >
-    
-    <select id="categoryInput" onchange="searchProducts()" style="padding:10px; border:1px solid #ccc; border-radius:8px; background: white; cursor: pointer;">
-        <option value="0">Все категории</option>
-    </select>
-    
-    <select id="sortInput" onchange="searchProducts()" style="padding:10px; border:1px solid #ccc; border-radius:8px; background: white; cursor: pointer;">
-        <option value="new">Сначала новинки</option>
-        <option value="price_asc">💰 По возрастанию цены</option>
-        <option value="price_desc">💰 По убыванию цены</option>
-    </select>
-
-    <button onclick="searchProducts()" style="background:#2196F3; color:white;">
-        Найти
-    </button>
-</div>
-
-<div id="products">Загрузка...</div>
 
 <div id="pagination" class="pagination-container"></div>
 
@@ -255,7 +295,7 @@ const canAddProduct = "{{.CanAddProduct}}".trim() === "true";
 
 /* ПАГИНАЦИЯ */
 let currentPage = 1;
-const limit = 6; 
+const limit = 10; 
 
 /* HEADER BUTTONS */
 let headerButtons = "";
@@ -359,7 +399,6 @@ async function loadProducts() {
         container.innerHTML = "";
 
         products.forEach(p => {
-            // Безопасное определение ID (поддерживает и p.id, и p.ID)
             const actualId = p.id || p.ID;
 
             const div = document.createElement("div");
@@ -385,21 +424,24 @@ async function loadProducts() {
             let countText = displayCount > 0 ? `${displayCount} шт.` : "Нет в наличии";
 
             div.innerHTML = `
-            <img 
-                src="${p.img_url && p.img_url.trim() !== '' ? p.img_url : 'http://localhost:9000/images/default.png'}"
-                style="
-                    width:100%;
-                    height:180px;
-                    object-fit:cover;
-                    border-radius:10px;
-                    margin-bottom:10px;
-                "
-                onerror="this.onerror=null; this.src='http://localhost:9000/images/default.png';"
-            />
-            
-                <div class="product-title">${p.name}</div>
+            <div>
+                <img 
+                    src="${p.img_url && p.img_url.trim() !== '' ? p.img_url : 'http://localhost:9000/images/default.png'}"
+                    style="
+                        width:100%;
+                        height:180px;
+                        object-fit:cover;
+                        border-radius:10px;
+                        margin-bottom:10px;
+                    "
+                    onerror="this.onerror=null; this.src='http://localhost:9000/images/default.png';"
+                />
+                
+                <div class="product-title" title="${p.name}">${p.name}</div>
                 <div class="description">${p.description || "Описание отсутствует"}</div>
+            </div>
 
+            <div>
                 <div class="info">
                     💰 ${priceText} <br>
                     📦 В наличии: ${countText}
@@ -407,9 +449,10 @@ async function loadProducts() {
 
                 <a href="/product/${actualId}" style="display:inline-block; margin-bottom:10px; color:#2196F3; text-decoration:none; font-weight:bold;">Открыть карточку</a>
 
-                <div style="margin-top:10px;">
+                <div style="margin-top:5px;">
                     ${buttons}
                 </div>
+            </div>
             `;
 
             container.appendChild(div);
@@ -427,14 +470,28 @@ function renderPagination(totalCount, currentLength) {
     const paginationContainer = document.getElementById("pagination");
     paginationContainer.innerHTML = "";
 
-    if (totalCount !== null) {
+    if (totalCount !== null && totalCount > 0) {
         const totalPages = Math.ceil(totalCount / limit);
         if (totalPages <= 1) return; 
 
         appendPageButton("«", currentPage - 1, currentPage === 1);
 
-        for (let i = 1; i <= totalPages; i++) {
+        // Ограничиваем количество отображаемых страниц, чтобы не раздувать пагинацию, если страниц тысячи
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, currentPage + 2);
+
+        if (startPage > 1) {
+            appendPageButton(1, 1, false, currentPage === 1);
+            if (startPage > 2) appendSpan("...");
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
             appendPageButton(i, i, false, i === currentPage);
+        }
+
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) appendSpan("...");
+            appendPageButton(totalPages, totalPages, false, currentPage === totalPages);
         }
 
         appendPageButton("»", currentPage + 1, currentPage === totalPages);
@@ -448,6 +505,14 @@ function renderPagination(totalCount, currentLength) {
     }
 }
 
+function appendSpan(text) {
+    const span = document.createElement("span");
+    span.innerText = text;
+    span.style.padding = "0 5px";
+    document.getElementById("pagination").appendChild(span);
+}
+
+// Изменено название параметра, чтобы не конфликтовать с глобальным limit
 function appendPageButton(text, targetPage, isDisabled, isActive = false) {
     const btn = document.createElement("button");
     btn.className = "pagination-btn";
@@ -464,6 +529,7 @@ function appendPageButton(text, targetPage, isDisabled, isActive = false) {
     document.getElementById("pagination").appendChild(btn);
 }
 
+// Навигация
 function goToAddUser() { window.location.href = "/adduser"; }
 function goToAddProduct() { window.location.href = "/addproduct"; }
 function goToAddSeller() { window.location.href = "/addseller"; }
