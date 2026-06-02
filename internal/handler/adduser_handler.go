@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"strings"
@@ -12,7 +13,7 @@ import (
 
 func AdminRegisterShow(c *gin.Context) {
 
-	tmpl, err := template.ParseFiles("internal/templates/addproduct.html")
+	tmpl, err := template.ParseFiles("internal/templates/registr.html")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -42,7 +43,7 @@ func AdminRegister(c *gin.Context) {
 	}
 	req.Login = strings.TrimSpace(req.Login)
 	req.Password = strings.TrimSpace(req.Password)
-
+	fmt.Println(req)
 	err := service.Register(req, userrole)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})

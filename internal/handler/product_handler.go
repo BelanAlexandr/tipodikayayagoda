@@ -25,9 +25,9 @@ func ProductShow(c *gin.Context) {
 
 	data := map[string]any{
 		"UserID":   uid,
-		"IsAdmin":  role == models.Roles.AdminID,
-		"IsSeller": role == models.Roles.SellerID,
-		"CanBuy":   role == models.Roles.ClientID,
+		"IsAdmin":  role == models.RoleAdmin,
+		"IsSeller": role == models.RoleSeller,
+		"CanBuy":   role == models.RoleClient,
 	}
 
 	if err := tmpl.Execute(c.Writer, data); err != nil {

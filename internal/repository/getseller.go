@@ -11,7 +11,7 @@ func GetSellers() ([]models.User, error) {
 		WHERE role = $1
 		ORDER BY secondname ASC, name ASC
 	`
-	rows, err := db.Query(query, models.Roles.SellerID)
+	rows, err := db.Query(query, models.RoleSeller)
 	if err != nil {
 		return nil, err
 	}

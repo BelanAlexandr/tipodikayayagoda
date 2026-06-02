@@ -9,7 +9,7 @@ import (
 )
 
 func DeleteProd(minioClient *minio.Client, id int, userRole int) error {
-	if userRole == models.Roles.AdminID {
+	if userRole == models.RoleAdmin {
 
 		img := repository.GetImageURL(id)
 

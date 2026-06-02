@@ -364,12 +364,7 @@ el("imageInput").addEventListener("change", async function () {
     if (!res.ok) { alert("Ошибка загрузки картинки"); return; }
 
     const data = await res.json();
-    await fetch("/api/product/" + productId, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ img_url: data.url })
-    });
+  
     loadProduct();
 });
 

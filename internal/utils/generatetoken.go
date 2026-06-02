@@ -11,13 +11,11 @@ var Jwtkey []byte
 func Init(key string) {
 	Jwtkey = []byte(key)
 }
-func GenerateJWT(id, role int, login string) (string, error) {
+func GenerateJWT(id int) (string, error) {
 
 	claims := jwt.MapClaims{
-		"id":    id,
-		"login": login,
-		"role":  role,
-		"exp":   time.Now().Add(time.Hour * 24).Unix(),
+		"id":  id,
+		"exp": time.Now().Add(time.Hour * 24).Unix(),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(Jwtkey)

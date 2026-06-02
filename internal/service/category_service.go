@@ -7,7 +7,7 @@ import (
 )
 
 func AddCategory(role int, name string) error {
-	if role != models.Roles.AdminID {
+	if role != models.RoleAdmin {
 		return errors.New("только администратор может добавлять категории")
 	}
 	if name == "" {

@@ -31,9 +31,9 @@ func AddProductHandlerShow(c *gin.Context) {
 
 	data := map[string]any{
 		"UserID":            userID,
-		"IsAdmin":           userrole == models.Roles.AdminID,
-		"IsSeller":          userrole == models.Roles.SellerID,
-		"CanEditAnyProduct": userrole == models.Roles.AdminID,
+		"IsAdmin":           userrole == models.RoleAdmin,
+		"IsSeller":          userrole == models.RoleSeller,
+		"CanEditAnyProduct": userrole == models.RoleAdmin,
 	}
 
 	if err := tmpl.Execute(c.Writer, data); err != nil {

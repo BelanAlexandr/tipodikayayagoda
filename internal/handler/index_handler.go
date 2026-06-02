@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -17,8 +18,10 @@ func IndexHandlerShow(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Данные авторизации не найдены"})
 		return
 	}
+	fmt.Print(userIDValue)
 	userrole, ok := userRoleValue.(int)
 	userID, ok := userIDValue.(int)
+	fmt.Println(userrole, userID)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Неверный формат ID пользователя"})
 		return
@@ -31,11 +34,11 @@ func IndexHandlerShow(c *gin.Context) {
 
 	tmpl.Execute(c.Writer, map[string]any{
 		"UserID":        userID,
-		"IsAdmin":       userrole == models.Roles.AdminID,
-		"IsSeller":      userrole == models.Roles.SellerID,
-		"CanBuy":        userrole == models.Roles.ClientID,
-		"CanAddUser":    userrole == models.Roles.AdminID,
-		"CanAddProduct": userrole == models.Roles.AdminID || userrole == models.Roles.SellerID,
+		"IsAdmin":       userrole == models.RoleAdmin,
+		"IsSeller":      userrole == models.RoleSeller,
+		"CanBuy":        userrole == models.RoleClient,
+		"CanAddUser":    userrole == models.RoleAdmin,
+		"CanAddProduct": userrole == models.RoleAdmin || userrole == models.RoleSeller,
 	})
 }
 

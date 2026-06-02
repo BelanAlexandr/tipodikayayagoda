@@ -3,12 +3,13 @@ package middleware
 import (
 	"net/http"
 
+	"tipodikayayagoda/internal/repository"
 	"tipodikayayagoda/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
-func RoleMiddleware(allowedRoles ...int) gin.HandlerFunc {
+func RoleMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		cookie, err := c.Cookie("tokenn")
@@ -18,34 +19,26 @@ func RoleMiddleware(allowedRoles ...int) gin.HandlerFunc {
 		}
 
 		claims, err := utils.ValidateToken(cookie)
-		if err != nil {
-			c.Redirect(http.StatusSeeOther, "/login")
-			return
-		}
+
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Невалидный токен"})
 			c.Abort()
 			return
 		}
-
-		userRole := claims["role"]
-
-		hasAccess := false
-		for _, role := range allowedRoles {
-			if userRole == role {
-				hasAccess = true
-				break
-			}
-		}
-
-		if !hasAccess {
-			c.JSON(http.StatusForbidden, gin.H{"error": "У вас нет доступа к этому ресурсу"})
+		idFloat, ok := claims["id"].(float64)
+		if !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "неверный формат ID в токене"})
 			c.Abort()
 			return
 		}
-
-		c.Set("userID", claims["id"])
-		c.Set("userRole", claims["role"])
+		role, err := repository.GetUserByID(int(idFloat))
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Пользователь не найден"})
+			c.Abort()
+			return
+		}
+		c.Set("userID", int(idFloat))
+		c.Set("userRole", role)
 
 		c.Next()
 	}

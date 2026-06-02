@@ -4,59 +4,59 @@
     <meta charset="UTF-8">
     <title>Поиск и редактирование товара</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
-        body { background: #f5f5f5; padding: 30px; display: flex; flex-direction: column; align-items: center; }
-        .container { width: 100%; max-width: 550px; background: white; padding: 30px; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
-        h2 { margin-bottom: 25px; text-align: center; }
-        .form-group { margin-bottom: 18px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; }
-        input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; outline: none; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; }
+        body { background: #f0f2f5; padding: 30px; display: flex; flex-direction: column; align-items: center; color: #333; }
+        .container { width: 100%; max-width: 550px; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { margin-bottom: 25px; text-align: center; font-size: 22px; color: #111; }
+        .form-group { margin-bottom: 18px; position: relative; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 14px; color: #555; }
+        input { width: 100%; padding: 12px 16px; border: 1px solid #ccd0d5; border-radius: 10px; outline: none; font-size: 15px; transition: border 0.2s; }
+        input:focus { border-color: #2196F3; box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1); }
         
-        /* Стили для блока предпросмотра информации о товаре */
-        .product-preview {
-            background: #f9f9f9;
-            border: 1px dashed #ccc;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
+        /* Умный выпадающий список поиска */
+        .search-results { 
+            position: absolute; width: 100%; background: white; border: 1px solid #ccd0d5; 
+            border-radius: 10px; max-height: 280px; overflow-y: auto; z-index: 100; 
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12); margin-top: 5px; display: none; 
         }
-        .preview-img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-bottom: 12px;
-        }
-        .preview-text {
-            font-size: 14px;
-            color: #333;
-            line-height: 1.5;
-            margin-bottom: 6px;
-        }
-        .preview-text strong {
-            color: #000;
-        }
+        .search-item { display: flex; align-items: center; padding: 10px 15px; cursor: pointer; border-bottom: 1px solid #f0f0f0; gap: 12px; }
+        .search-item:last-child { border-bottom: none; }
+        .search-item:hover, .search-item.active { background: #f5f9ff; }
+        .search-item img { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; background: #eee; }
+        .search-item .item-info { display: flex; flex-direction: column; }
+        .search-item .item-name { font-weight: 600; font-size: 14px; }
+        .search-item .item-cat { font-size: 12px; color: #777; margin-top: 2px; }
 
-        .buttons { display: flex; gap: 10px; margin-top: 25px; }
-        button { flex: 1; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .save-btn { background: #4CAF50; color: white; }
-        .back-btn { background: #9e9e9e; color: white; text-align: center; text-decoration: none; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+        /* Блок предпросмотра товара */
+        .product-preview { background: #fafafa; border: 1px solid #e4e6eb; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .preview-img { width: 100%; height: 220px; object-fit: cover; border-radius: 10px; margin-bottom: 15px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05); }
+        .preview-text { font-size: 15px; color: #444; line-height: 1.6; margin-bottom: 8px; }
+        .preview-text strong { color: #111; }
+
+        .buttons { display: flex; gap: 12px; margin-top: 25px; }
+        button { flex: 1; border: none; padding: 14px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 15px; transition: opacity 0.2s; }
+        button:hover { opacity: 0.9; }
+        .save-btn { background: #00a400; color: white; }
+        .back-btn { background: #e4e6eb; color: #4b4f56; }
+        
         .back-link-container { margin-top: 20px; text-align: center; }
-        .back-link { color: #2196F3; text-decoration: none; font-weight: bold; }
+        .back-link { color: #2196F3; text-decoration: none; font-weight: bold; font-size: 14px; }
         .back-link:hover { text-decoration: underline; }
-        .message { margin-top: 15px; text-align: center; font-weight: bold; }
-        .success { color: green; } .error { color: red; }
+        
+        .message { margin-top: 15px; text-align: center; font-weight: bold; padding: 10px; border-radius: 8px; display: none; }
+        .success { color: #155724; background: #d4edda; display: block; } 
+        .error { color: #721c24; background: #f8d7da; display: block; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 id="pageTitle">Тоже продавать этот товар</h2>
+    <h2 id="pageTitle">Добавить товар в свои предложения</h2>
 
     <div class="form-group" id="searchGroup">
-        <label>Введите название для поиска</label>
-        <input type="text" id="searchProduct" list="product-suggestions" placeholder="Начните вводить название...">
-        <datalist id="product-suggestions"></datalist>
+        <label>Поиск товара по названию</label>
+        <input type="text" id="searchProduct" placeholder="Начните вводить название товара..." autocomplete="off">
+        <div id="searchResults" class="search-results"></div>
     </div>
 
     <div id="productPreview" class="product-preview" style="display: none;">
@@ -67,12 +67,12 @@
 
     <form id="editForm" style="display: none;">
         <div class="form-group">
-            <label>Цена ($)</label>
-            <input type="number" id="price" min="0" step="0.01" required>
+            <label>Ваша цена ($)</label>
+            <input type="number" id="price" min="0" step="0.01" required placeholder="0.00">
         </div>
         <div class="form-group">
-            <label>Количество (шт.)</label>
-            <input type="number" id="count" min="0" required>
+            <label>Количество в наличии (шт.)</label>
+            <input type="number" id="count" min="0" required placeholder="0">
         </div>
         <div class="buttons">
             <button type="submit" class="save-btn" id="submitBtn">Создать предложение</button>
@@ -81,7 +81,7 @@
     </form>
 
     <div id="backLinkContainer" class="back-link-container">
-        <a href="#" class="back-link" onclick="goBack(); return false;">← Вернуться на главную</a>
+        <a href="#" class="back-link" onclick="goBack(); return false;">← На главную</a>
     </div>
 
     <div id="message" class="message"></div>
@@ -93,95 +93,157 @@
     const isEdit = productIdFromUrl !== null;
 
     let selectedProductId = isEdit ? Number(productIdFromUrl) : null;
-    let allProducts = [];
     let allCategories = []; 
+    let searchTimeout = null;
+    let currentFocus = -1; // Для управления стрелочками с клавиатуры
 
-    // Функция возврата (на карточку товара, если редактировали, либо на главную)
+    const searchInput = document.getElementById("searchProduct");
+    const resultsContainer = document.getElementById("searchResults");
+
     function goBack() {
-        if (isEdit) {
-            window.location.href = `/product/${selectedProductId}`;
-        } else {
-            window.location.href = "/index";
-        }
+        window.location.href = isEdit ? `/product?id=${selectedProductId}` : "/index";
     }
 
-    // Загрузка списка категорий
     async function fetchCategories() {
         try {
             const res = await fetch("/api/categories");
             allCategories = await res.json();
-        } catch (e) {
-            console.error("Ошибка загрузки категорий", e);
+        } catch (e) { console.error("Ошибка загрузки категорий", e); }
+    }
+
+    // ДИНАМИЧЕСКИЙ ПОИСК С СЕРВЕРА
+    async function searchProductsFromBackend(query) {
+        if (!query.trim()) {
+            resultsContainer.style.display = "none";
+            return;
         }
-    }
-
-    // Загрузка списка товаров
-    async function fetchAllProducts() {
         try {
-            const res = await fetch("/api/addseller"); 
-            allProducts = await res.json();
-            const datalist = document.getElementById("product-suggestions");
-            datalist.innerHTML = '';
+            // Обрати внимание: отправляем query на бэкенд, чтобы он отдал только нужные совпадения (например, LIMIT 10)
+            const res = await fetch(`/api/addseller/all?search=${encodeURIComponent(query)}`); 
+            const products = await res.json();
             
-            allProducts.forEach(p => {
-                const opt = document.createElement("option");
-                opt.value = p.name;
-                datalist.appendChild(opt);
-            });
-        } catch (e) { console.error("Ошибка загрузки товаров", e); }
+            renderSearchResults(products);
+        } catch (e) { console.error("Ошибка поиска товаров", e); }
     }
 
-    // Функция заполнения UI данными выбранного товара
-    function fillProductData(product) {
-        // Ищем название категории
-        const categoryObj = allCategories.find(c => c.id === Number(product.category_id));
-        const categoryName = categoryObj ? categoryObj.name : "Без категории";
-        
-        // Заполнение неизменяемых данных о товаре
-        const imgUrl = product.img_url && product.img_url.trim() !== '' ? product.img_url : 'http://localhost:9000/images/default.png';
-        document.getElementById("previewImg").src = imgUrl;
-        document.getElementById("previewCategory").innerText = categoryName;
-        document.getElementById("previewDescription").innerText = product.description || "Описание отсутствует";
-        
-        // Показываем блок инфо о товаре
-        document.getElementById("productPreview").style.display = "block";
+    function renderSearchResults(products) {
+        resultsContainer.innerHTML = "";
+        currentFocus = -1;
 
-        // Если это режим редактирования, вытаскиваем цену и количество конкретного оффера
-        // (Ориентируемся на структуру полей вашего JSON из API)
+        if (products.length === 0) {
+            resultsContainer.innerHTML = `<div class="search-item" style="cursor:default; color:#888;">Ничего не найдено</div>`;
+            resultsContainer.style.display = "block";
+            return;
+        }
+
+        products.forEach((product) => {
+            const catObj = allCategories.find(c => c.id === Number(product.category_id));
+            const catName = catObj ? catObj.name : "Без категории";
+            const img = product.img_url || 'http://localhost:9000/images/default.png';
+
+            const item = document.createElement("div");
+            item.className = "search-item";
+            item.innerHTML = `
+                <img src="${img}" onerror="this.onerror=null; this.src='http://localhost:9000/images/default.png';">
+                <div class="item-info">
+                    <span class="item-name">${product.name}</span>
+                    <span class="item-cat">${catName}</span>
+                </div>
+            `;
+
+            // Клик по элементу из поиска
+            item.addEventListener("click", () => {
+                selectProduct(product);
+            });
+
+            resultsContainer.appendChild(item);
+        });
+
+        resultsContainer.style.display = "block";
+    }
+
+    function selectProduct(product) {
+        selectedProductId = product.id;
+        searchInput.value = product.name;
+        resultsContainer.style.display = "none";
+        fillProductData(product);
+    }
+
+    function fillProductData(product) {
+        const categoryObj = allCategories.find(c => c.id === Number(product.category_id));
+        document.getElementById("previewCategory").innerText = categoryObj ? categoryObj.name : "Без категории";
+        document.getElementById("previewDescription").innerText = product.description || "Описание отсутствует";
+        document.getElementById("previewImg").src = product.img_url || 'http://localhost:9000/images/default.png';
+        
+        document.getElementById("productPreview").style.display = "block";
         document.getElementById("price").value = product.price || product.min_price || "";
         document.getElementById("count").value = product.count || product.total_count || "";
         
-        // Показываем форму
         document.getElementById("editForm").style.display = "block";
         document.getElementById("backLinkContainer").style.display = "none"; 
     }
 
-    // Обработка выбора при ручном поиске
-    document.getElementById("searchProduct").addEventListener("input", (e) => {
-        const val = e.target.value;
-        const selected = allProducts.find(p => p.name === val);
+    // Слушатель ввода с защитой от спама запросами (Debounce)
+    searchInput.addEventListener("input", (e) => {
+        clearTimeout(searchTimeout);
+        const query = e.target.value;
         
-        if (selected) {
-            selectedProductId = selected.id;
-            fillProductData(selected);
-        } else {
-            selectedProductId = null;
-            document.getElementById("productPreview").style.display = "none";
-            document.getElementById("editForm").style.display = "none";
-            document.getElementById("backLinkContainer").style.display = "block"; 
+        searchTimeout = setTimeout(() => {
+            searchProductsFromBackend(query);
+        }, 300); // Задержка в 300 миллисекунд
+    });
+
+    // Навигация кнопками клавиатуры (Стрелочки и Enter)
+    searchInput.addEventListener("keydown", (e) => {
+        let items = resultsContainer.getElementsByClassName("search-item");
+        if (items.length === 0 || items[0].style.cursor === "default") return;
+
+        if (e.keyCode === 40) { // Стрелка вниз
+            currentFocus++;
+            addActive(items);
+        } else if (e.keyCode === 38) { // Стрелка вверх
+            currentFocus--;
+            addActive(items);
+        } else if (e.keyCode === 13) { // Enter
+            e.preventDefault();
+            if (currentFocus > -1 && items[currentFocus]) {
+                items[currentFocus].click();
+            }
         }
     });
 
-    // Отправка данных на бэкенд
+    function addActive(items) {
+        if (!items) return false;
+        removeActive(items);
+        if (currentFocus >= items.length) currentFocus = 0;
+        if (currentFocus < 0) currentFocus = (items.length - 1);
+        items[currentFocus].classList.add("active");
+        items[currentFocus].scrollIntoView({ block: "nearest" });
+    }
+
+    function removeActive(items) {
+        for (let i = 0; i < items.length; i++) {
+            items[i].classList.remove("active");
+        }
+    }
+
+    // Закрывать поиск при клике мимо него
+    document.addEventListener("click", (e) => {
+        if (e.target !== searchInput && e.target !== resultsContainer) {
+            resultsContainer.style.display = "none";
+        }
+    });
+
+    // Отправка формы
     document.getElementById("editForm").addEventListener("submit", async (e) => {
         e.preventDefault();
+        const msg = document.getElementById("message");
         
         const data = {
             price: parseFloat(document.getElementById("price").value),
             count: parseInt(document.getElementById("count").value)
         };
 
-        // ДИНАМИЧЕСКИЙ ВЫБОР МЕТОДА И URL В ЗАВИСИМОСТИ ОТ РЕЖИМА
         let method = isEdit ? "PUT" : "POST"; 
         let url = isEdit ? `/api/offer/update/${selectedProductId}` : `/api/addseller/${selectedProductId}`;
 
@@ -192,49 +254,46 @@
                 body: JSON.stringify(data)
             });
 
-            const msg = document.getElementById("message");
             if (res.ok) {
                 msg.className = "message success";
-                msg.innerText = isEdit ? "Изменения сохранены! Перенаправляем..." : "Успешно создано! Перенаправляем...";
-                setTimeout(() => { goBack(); }, 1500);
+                msg.innerText = isEdit ? "Предложение обновлено!" : "Предложение успешно создано!";
+                setTimeout(() => { goBack(); }, 1300);
             } else {
                 const errText = await res.text();
                 msg.className = "message error";
-                msg.innerText = "Ошибка при сохранении: " + errText;
+                msg.innerText = "Ошибка: " + errText;
             }
         } catch (err) {
-            console.error(err);
-            document.getElementById("message").innerText = "Ошибка сети";
+            msg.className = "message error";
+            msg.innerText = "Ошибка сети";
         }
     });
 
-    // Инициализация загрузок при загрузке страницы
+    // Логика инициализации страницы
     async function init() {
-        await fetchCategories();  // Сначала качаем категории
-        await fetchAllProducts(); // Потом качаем список товаров
+        await fetchCategories();
 
-        // Если страница открыта в режиме редактирования конкретного предложения (?id=...)
         if (isEdit) {
             document.getElementById("pageTitle").innerText = "Редактировать предложение";
             document.getElementById("submitBtn").innerText = "Сохранить изменения";
-            document.getElementById("searchGroup").style.display = "none"; // Скрываем поиск, товар определен по ID
+            document.getElementById("searchGroup").style.display = "none";
 
-            // Находим нужный товар по ID из URL
-            const currentProduct = allProducts.find(p => p.id === selectedProductId);
-            
-            if (currentProduct) {
-                fillProductData(currentProduct);
-            } else {
-                const msg = document.getElementById("message");
-                msg.className = "message error";
-                msg.innerText = "Товар не найден на сервере";
-                document.getElementById("backLinkContainer").style.display = "block";
-            }
+            // Если мы редактируем, запрашиваем конкретный товар по ID с сервера
+            try {
+                const res = await fetch(`/api/product?id=${selectedProductId}`);
+                if (res.ok) {
+                    const product = await res.json();
+                    fillProductData(product);
+                } else {
+                    const msg = document.getElementById("message");
+                    msg.className = "message error";
+                    msg.innerText = "Товар не найден";
+                }
+            } catch (e) { console.error(e); }
         }
     }
 
     init();
 </script>
-
 </body>
 </html>

@@ -34,12 +34,12 @@ func Register(c *gin.Context) {
 	req.Login = strings.TrimSpace(req.Login)
 	req.Password = strings.TrimSpace(req.Password)
 
-	if req.Role == models.Roles.AdminID {
+	if req.Role == models.RoleAdmin {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You cannot register as admin"})
 		return
 	}
 
-	err := service.Register(req, models.Roles.ClientID)
+	err := service.Register(req, models.RoleClient)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error registering user"})
 		return

@@ -8,16 +8,16 @@ import (
 
 func Login(login, password string) (string, error) {
 
-	user, err := repository.GetUser(login, "users")
+	user_id, user_password, err := repository.GetUser(login)
 	if err != nil {
 		return "", err
 	}
 
-	ok := utils.CheckHash(password, user.Password)
+	ok := utils.CheckHash(password, user_password)
 	if !ok {
 		return "", fmt.Errorf("invalid password")
 	}
-	token, err := utils.GenerateJWT(user.ID, user.Role, user.Login)
+	token, err := utils.GenerateJWT(user_id)
 	if err != nil {
 		return "", err
 	}

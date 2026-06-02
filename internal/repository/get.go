@@ -1,16 +1,13 @@
 package repository
 
-import (
-	"tipodikayayagoda/internal/models"
-)
+func GetUser(login string) (user_id int, user_password string, err error) {
+	var id int
+	var password string
 
-func GetUser(login, table string) (models.User, error) {
-	var u models.User
-
-	err := db.QueryRow(
-		"SELECT id, login, pass, role FROM users WHERE login=$1",
+	err = db.QueryRow(
+		"SELECT id,pass FROM users WHERE login=$1",
 		login,
-	).Scan(&u.ID, &u.Login, &u.Password, &u.Role)
+	).Scan(&id, &password)
 
-	return u, err
+	return id, password, err
 }

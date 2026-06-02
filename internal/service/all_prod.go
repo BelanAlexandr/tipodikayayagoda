@@ -5,6 +5,6 @@ import (
 	"tipodikayayagoda/internal/repository"
 )
 
-func AllProd() []models.Product {
-	return repository.AllProd()
+func AllProd(searchQuery string) ([]models.Product, error) {
+	return repository.AllProd(searchQuery)
 }

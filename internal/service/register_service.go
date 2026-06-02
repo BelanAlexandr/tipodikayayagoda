@@ -14,16 +14,16 @@ func Register(user models.User, userrole int) error {
 	if err != nil {
 		return err
 	}
-	if userrole != models.Roles.AdminID {
-		user.Role = models.Roles.ClientID
+	if userrole != models.RoleAdmin {
+		user.Role = models.RoleClient
 		return repository.Register(user, ti)
 	}
 	if user.Role == 1 {
-		user.Role = models.Roles.ClientID
+		user.Role = models.RoleClient
 	} else if user.Role == 2 {
-		user.Role = models.Roles.SellerID
+		user.Role = models.RoleSeller
 	} else if user.Role == 3 {
-		user.Role = models.Roles.AdminID
+		user.Role = models.RoleAdmin
 	}
 	return repository.Register(user, ti)
 }
