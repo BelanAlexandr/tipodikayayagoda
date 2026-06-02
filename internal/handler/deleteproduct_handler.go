@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/service"
 	"tipodikayayagoda/internal/storage"
 
@@ -11,7 +12,7 @@ import (
 
 func DeleteProductHandler(c *gin.Context) {
 	userRoleValue, existsRole := c.Get("userRole")
-	if !existsRole {
+	if !existsRole || userRoleValue.(int) != models.RoleAdmin {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Данные авторизации не найдены"})
 		return
 	}

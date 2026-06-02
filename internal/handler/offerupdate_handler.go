@@ -3,14 +3,16 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 func OfferUpdate(c *gin.Context) {
+	userRoleValue, _ := c.Get("userRole")
 	userIDValue, exists := c.Get("userID")
-	if !exists {
+	if !exists || userRoleValue.(int) != models.RoleSeller {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}

@@ -11,14 +11,17 @@ import (
 )
 
 func ProductShow(c *gin.Context) {
+	userID, existsID := c.Get("userID")
+	userRole, existsRole := c.Get("userRole")
+	if !existsID || !existsRole {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Данные авторизации не найдены"})
+		return
+	}
 	tmpl, err := template.ParseFiles("internal/templates/product.html")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка загрузки шаблона"})
 		return
 	}
-
-	userID, _ := c.Get("userID")
-	userRole, _ := c.Get("userRole")
 
 	uid, _ := userID.(int)
 	role, _ := userRole.(int)
@@ -37,16 +40,18 @@ func ProductShow(c *gin.Context) {
 }
 
 func Product(c *gin.Context) {
-
+	userID, existsID := c.Get("userID")
+	userRole, existsRole := c.Get("userRole")
+	if !existsID || !existsRole {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Данные авторизации не найдены"})
+		return
+	}
 	idStr := c.Query("id")
 	idd, err := strconv.Atoi(idStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product id"})
 		return
 	}
-
-	userID, _ := c.Get("userID")
-	userRole, _ := c.Get("userRole")
 
 	uid, _ := userID.(int)
 	role, _ := userRole.(int)

@@ -4,12 +4,20 @@ import (
 	"html/template"
 	"net/http"
 	"strconv"
+	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 func SellerOfferShow(c *gin.Context) {
+	_, exists := c.Get("userID")
+	userRoleValue, existsRole := c.Get("userRole")
+	if !exists || !existsRole || userRoleValue.(int) != models.RoleSeller {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
 	t, err := template.ParseFiles("internal/templates/addseller.html")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка загрузки шаблона"})
@@ -20,7 +28,11 @@ func SellerOfferShow(c *gin.Context) {
 }
 
 func SellerOffer(c *gin.Context) {
-
+	userRoleValue, existsRole := c.Get("userRole")
+	if !existsRole || userRoleValue.(int) != models.RoleSeller {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
 	userIDValue, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})

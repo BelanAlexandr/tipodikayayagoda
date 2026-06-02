@@ -3,13 +3,18 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 func UploadImageHandler(c *gin.Context) {
-
+	userRoleValue, existsRole := c.Get("userRole")
+	if !existsRole || userRoleValue.(int) != models.RoleAdmin {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
 	id := c.Param("id")
 	idd, err := strconv.Atoi(id)
 	if err != nil {

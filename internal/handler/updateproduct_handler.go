@@ -3,13 +3,18 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"tipodikayayagoda/internal/models"
 	"tipodikayayagoda/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 func UpdateProductHandler(c *gin.Context) {
-
+	userRoleValue, existsRole := c.Get("userRole")
+	if !existsRole || userRoleValue.(int) != models.RoleAdmin {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Данные авторизации не найдены"})
+		return
+	}
 	idStr := c.Param("id")
 	productID, err := strconv.Atoi(idStr)
 	if err != nil {
