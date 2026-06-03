@@ -25,29 +25,32 @@ func getAllProducts(search string, limit int, offset int, sort string, categoryI
 		orderBy = "min_price DESC"
 	}
 
-	extraFilter := ""
+	whereClause := "WHERE ($1 = '' OR p.name ILIKE '%%' || $1 || '%%') AND ($2 = 0 OR p.category_id = $2)"
 	if clientOnly {
-		extraFilter = "AND (p.offer = true)"
+		whereClause += " AND (p.offer = true)"
 	}
 
-	if search == "" && categoryID == 0 && !clientOnly {
-		err := db.QueryRow("SELECT reltuples::bigint FROM pg_class WHERE relname = 'products'").Scan(&totalCount)
-		if err != nil {
-			return nil, 0, fmt.Errorf("fast table count failed: %w", err)
-		}
+	var countQuery string
+	if clientOnly {
+
+		countQuery = fmt.Sprintf(`
+            SELECT COUNT(DISTINCT p.id) 
+            FROM products p
+            INNER JOIN product_offers o ON p.id = o.product_id
+            %s
+        `, whereClause)
 	} else {
 
-		countQuery := fmt.Sprintf(`
-			SELECT COUNT(*) 
-			FROM products p
-			WHERE ($1 = '' OR p.name ILIKE '%%' || $1 || '%%')
-			  AND ($2 = 0 OR p.category_id = $2) %s
-		`, extraFilter)
+		countQuery = fmt.Sprintf(`
+            SELECT COUNT(*) 
+            FROM products p
+            %s
+        `, whereClause)
+	}
 
-		err := db.QueryRow(countQuery, search, categoryID).Scan(&totalCount)
-		if err != nil {
-			return nil, 0, fmt.Errorf("count query failed: %w", err)
-		}
+	err := db.QueryRow(countQuery, search, categoryID).Scan(&totalCount)
+	if err != nil {
+		return nil, 0, fmt.Errorf("count query failed: %w", err)
 	}
 
 	if totalCount == 0 {
@@ -55,22 +58,21 @@ func getAllProducts(search string, limit int, offset int, sort string, categoryI
 	}
 
 	dataQuery := fmt.Sprintf(`
-		SELECT 
-			p.id, 
-			p.name, 
-			p.description, 
-			COALESCE(MIN(o.price), 0) as min_price, 
-			COALESCE(SUM(o.count), 0) as total_count, 
-			p.img_url, 
-			p.category_id
-		FROM products p
-		LEFT JOIN product_offers o ON p.id = o.product_id
-		WHERE ($1 = '' OR p.name ILIKE '%%' || $1 || '%%')
-		  AND ($2 = 0 OR p.category_id = $2) %s
-		GROUP BY p.id
-		ORDER BY %s
-		LIMIT $3 OFFSET $4
-	`, extraFilter, orderBy)
+        SELECT 
+            p.id, 
+            p.name, 
+            p.description, 
+            COALESCE(MIN(o.price), 0) as min_price, 
+            COALESCE(SUM(o.count), 0) as total_count, 
+            p.img_url, 
+            p.category_id
+        FROM products p
+        LEFT JOIN product_offers o ON p.id = o.product_id
+        %s
+        GROUP BY p.id
+        ORDER BY %s
+        LIMIT $3 OFFSET $4
+    `, whereClause, orderBy)
 
 	rows, err := db.Query(dataQuery, search, categoryID, limit, offset)
 	if err != nil {

@@ -58,9 +58,10 @@ CREATE INDEX idx_products_name_trgm ON products USING gin (name gin_trgm_ops);
 
 
 CREATE INDEX idx_products_category_id ON products(category_id);
-
-
+CREATE INDEX idx_products_id ON products(id);
+CREATE INDEX idx_product_offers_seller_id ON product_offers(seller_id);
 CREATE INDEX idx_product_offers_product_id ON product_offers(product_id);
+
 
 
 CREATE INDEX idx_notifications_user_unread ON notifications (user_id) WHERE is_read = FALSE;

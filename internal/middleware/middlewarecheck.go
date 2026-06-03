@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 
 	"tipodikayayagoda/internal/repository"
@@ -31,7 +32,8 @@ func RoleMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		role, err := repository.GetUserByID(int(idFloat))
+		role, err := repository.GetUserbyID(int(idFloat))
+		fmt.Println(role)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Пользователь не найден"})
 			c.Abort()
