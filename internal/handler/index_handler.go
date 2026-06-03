@@ -70,9 +70,9 @@ func IndexHandler(c *gin.Context) {
 		categoryID = 0
 	}
 
-	limit, err := strconv.Atoi(c.DefaultQuery("limit", "6"))
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	if err != nil || limit < 1 {
-		limit = 6
+		limit = 10
 	}
 
 	lastID, err := strconv.Atoi(c.DefaultQuery("last_id", "0"))
@@ -85,7 +85,17 @@ func IndexHandler(c *gin.Context) {
 		lastPrice = 0.0
 	}
 
-	products, totalCount, err := service.GetProducts(userRole, userID, search, lastID, lastPrice, limit, sort, categoryID)
+	lastRank, err := strconv.ParseFloat(c.DefaultQuery("last_rank", "0.0"), 64)
+	if err != nil || lastRank < 0 {
+		lastRank = 0.0
+	}
+
+	lastLength, err := strconv.Atoi(c.DefaultQuery("last_length", "0"))
+	if err != nil || lastLength < 0 {
+		lastLength = 0
+	}
+
+	products, totalCount, err := service.GetProducts(userRole, userID, search, lastID, lastPrice, lastRank, lastLength, limit, sort, categoryID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error loading products"})
 		return

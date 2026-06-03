@@ -6,10 +6,11 @@ import (
 	"tipodikayayagoda/internal/repository"
 )
 
-func GetProducts(role int, userID int, search string, lastID int, lastPrice float64, limit int, sort string, category int) ([]models.Product, int, error) {
+func GetProducts(role int, userID int, search string, lastID int, lastPrice float64, lastRank float64, lastLength int, limit int, sort string, category int) ([]models.Product, int, error) {
 
 	if role == models.RoleAdmin {
-		products, totalCount, err := repository.GetAllProdAdmin(search, limit, lastID, lastPrice, sort, category)
+
+		products, totalCount, err := repository.GetAllProdAdmin(search, limit, lastID, lastPrice, lastRank, lastLength, sort, category)
 		if err != nil {
 			return nil, 0, fmt.Errorf("failed to get admin products: %w", err)
 		}
@@ -17,7 +18,7 @@ func GetProducts(role int, userID int, search string, lastID int, lastPrice floa
 
 	} else if role == models.RoleClient {
 
-		products, totalCount, err := repository.GetAllProdClient(search, limit, lastID, lastPrice, sort, category)
+		products, totalCount, err := repository.GetAllProdClient(search, limit, lastID, lastPrice, lastRank, lastLength, sort, category)
 		if err != nil {
 			return nil, 0, fmt.Errorf("failed to get client products: %w", err)
 		}

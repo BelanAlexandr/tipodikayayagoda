@@ -5,7 +5,7 @@ import (
 	"tipodikayayagoda/internal/repository"
 	"tipodikayayagoda/internal/utils"
 
-	"github.com/minio/minio-go/v7" // Не забудь импортировать официальный пакет
+	"github.com/minio/minio-go/v7"
 )
 
 func DeleteProd(minioClient *minio.Client, id int, userRole int) error {
