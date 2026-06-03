@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -18,10 +17,9 @@ func IndexHandlerShow(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Данные авторизации не найдены"})
 		return
 	}
-	fmt.Print(userIDValue)
 	userrole, ok := userRoleValue.(int)
 	userID, ok := userIDValue.(int)
-	fmt.Println(userrole, userID)
+
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Неверный формат ID пользователя"})
 		return

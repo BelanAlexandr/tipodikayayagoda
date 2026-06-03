@@ -18,9 +18,9 @@ func getAllProducts(search string, limit int, lastID int, lastPrice float64, las
 	var totalCount int
 
 	whereClause := `WHERE ($1 = '' OR 
-        to_tsvector('russian', p.name) @@ plainto_tsquery('russian', $1) OR 
-        p.name ILIKE '%' || $1 || '%'
-    ) AND ($2 = 0 OR p.category_id = $2)`
+		to_tsvector('russian', p.name) @@ plainto_tsquery('russian', $1) OR 
+		p.name ILIKE '%' || $1 || '%'
+	) AND ($2 = 0 OR p.category_id = $2)`
 
 	if clientOnly {
 		whereClause += " AND (p.offer = true)"
@@ -29,15 +29,15 @@ func getAllProducts(search string, limit int, lastID int, lastPrice float64, las
 	var countQuery string
 	if clientOnly {
 		countQuery = `
-            SELECT COUNT(DISTINCT p.id) 
-            FROM products p
-            INNER JOIN product_offers o ON p.id = o.product_id
-        ` + whereClause
+			SELECT COUNT(DISTINCT p.id) 
+			FROM products p
+			INNER JOIN product_offers o ON p.id = o.product_id
+		` + whereClause
 	} else {
 		countQuery = `
-            SELECT COUNT(*) 
-            FROM products p
-        ` + whereClause
+			SELECT COUNT(*) 
+			FROM products p
+		` + whereClause
 	}
 
 	err := db.QueryRow(countQuery, search, categoryID).Scan(&totalCount)
@@ -75,7 +75,6 @@ func getAllProducts(search string, limit int, lastID int, lastPrice float64, las
 			orderBy = "ts_rank(to_tsvector('russian', p.name), plainto_tsquery('russian', $1)) DESC, LENGTH(p.name) ASC, p.id DESC"
 
 			if lastID > 0 {
-
 				queryParams = append(queryParams, lastRank, lastLength, lastID)
 				rankIdx := len(queryParams) - 2
 				lenIdx := len(queryParams) - 1
@@ -102,23 +101,51 @@ func getAllProducts(search string, limit int, lastID int, lastPrice float64, las
 		}
 	}
 
-	dataQuery := `
-        SELECT 
-            p.id, 
-            p.name, 
-            p.description, 
-            COALESCE(MIN(o.price), 0) as min_price, 
-            COALESCE(SUM(o.count), 0) as total_count, 
-            p.img_url, 
-            p.category_id
-        FROM products p
-        LEFT JOIN product_offers o ON p.id = o.product_id
-    ` + whereClause + `
-        GROUP BY p.id
-    ` + cursorClause + `
-        ORDER BY ` + orderBy + `
-        LIMIT $3 
-    `
+	var dataQuery string
+
+	if sort == "price_asc" || sort == "price_desc" {
+
+		dataQuery = `
+			SELECT 
+				p.id, 
+				p.name, 
+				p.description, 
+				COALESCE(MIN(o.price), 0) as min_price, 
+				COALESCE(SUM(o.count), 0) as total_count, 
+				p.img_url, 
+				p.category_id,
+				0.0 as rank
+			FROM products p
+			LEFT JOIN product_offers o ON p.id = o.product_id
+		` + whereClause + `
+			GROUP BY p.id
+		` + cursorClause + `
+			ORDER BY ` + orderBy + `
+			LIMIT $3`
+	} else {
+
+		var rankField string
+		if search != "" {
+			rankField = "ts_rank(to_tsvector('russian', p.name), plainto_tsquery('russian', $1)) as rank"
+		} else {
+			rankField = "0.0 as rank"
+		}
+
+		dataQuery = fmt.Sprintf(`
+			SELECT
+				p.id, 
+				p.name, 
+				p.description, 
+				(SELECT COALESCE(MIN(price), 0) FROM product_offers WHERE product_id = p.id) as min_price, 
+				(SELECT COALESCE(SUM(count), 0) FROM product_offers WHERE product_id = p.id) as total_count, 
+				p.img_url, 
+				p.category_id,
+				%s
+			FROM products p
+			%s
+			ORDER BY %s
+			LIMIT $3`, rankField, whereClause, orderBy)
+	}
 
 	rows, err := db.Query(dataQuery, queryParams...)
 	if err != nil {
@@ -131,6 +158,7 @@ func getAllProducts(search string, limit int, lastID int, lastPrice float64, las
 		var product models.Product
 		var imgURL sql.NullString
 		var desc sql.NullString
+		var rank float64
 
 		err := rows.Scan(
 			&product.ID,
@@ -140,6 +168,7 @@ func getAllProducts(search string, limit int, lastID int, lastPrice float64, las
 			&product.Count,
 			&imgURL,
 			&product.Category_id,
+			&rank,
 		)
 		if err != nil {
 			return nil, 0, fmt.Errorf("row scan failed: %w", err)
@@ -151,6 +180,8 @@ func getAllProducts(search string, limit int, lastID int, lastPrice float64, las
 		if imgURL.Valid {
 			product.ImgURL = imgURL.String
 		}
+
+		product.Rank = rank
 
 		products = append(products, product)
 	}

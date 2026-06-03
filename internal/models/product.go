@@ -9,4 +9,5 @@ type Product struct {
 	Price       float64 `json:"price"`
 	Count       int     `json:"count"`
 	Offer       bool    `json:"offer"`
+	Rank        float64 `json:"rank"`
 }
