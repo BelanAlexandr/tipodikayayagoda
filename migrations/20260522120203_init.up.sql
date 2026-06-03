@@ -1,5 +1,4 @@
-
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
+ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 
 CREATE TABLE roledictionary (
@@ -7,12 +6,10 @@ CREATE TABLE roledictionary (
     role_name VARCHAR(255) NOT NULL UNIQUE
 );
 
-
 CREATE TABLE categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE
 );
-
 
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
@@ -24,7 +21,6 @@ CREATE TABLE users (
     role INTEGER NOT NULL REFERENCES roledictionary(id) ON DELETE RESTRICT
 );
 
-
 CREATE TABLE products (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -33,7 +29,6 @@ CREATE TABLE products (
     offer BOOLEAN NOT NULL DEFAULT FALSE,
     category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT
 );
-
 
 CREATE TABLE product_offers (
     id SERIAL PRIMARY KEY,
@@ -44,7 +39,6 @@ CREATE TABLE product_offers (
     CONSTRAINT unique_product_seller UNIQUE(product_id, seller_id)
 );
 
-
 CREATE TABLE notifications (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -53,19 +47,20 @@ CREATE TABLE notifications (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE INDEX IF NOT EXISTS idx_products_name_fts 
+ON products USING gin (to_tsvector('russian', name));
 
-CREATE INDEX idx_products_name_trgm ON products USING gin (name gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS idx_products_name_trgm 
+ON products USING gin (name gin_trgm_ops);
 
 
 CREATE INDEX idx_products_category_id ON products(category_id);
 CREATE INDEX idx_products_id ON products(id);
 CREATE INDEX idx_product_offers_seller_id ON product_offers(seller_id);
 CREATE INDEX idx_product_offers_product_id ON product_offers(product_id);
-
-
+CREATE INDEX idx_product_offers_pid_price ON product_offers(product_id, price);
 
 CREATE INDEX idx_notifications_user_unread ON notifications (user_id) WHERE is_read = FALSE;
-
 
 
 INSERT INTO roledictionary (id, role_name) VALUES 

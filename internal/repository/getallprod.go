@@ -6,46 +6,41 @@ import (
 	"tipodikayayagoda/internal/models"
 )
 
-func GetAllProdAdmin(search string, limit int, offset int, sort string, categoryID int) ([]models.Product, int, error) {
-	return getAllProducts(search, limit, offset, sort, categoryID, false)
+func GetAllProdAdmin(search string, limit int, lastID int, lastPrice float64, sort string, categoryID int) ([]models.Product, int, error) {
+	return getAllProducts(search, limit, lastID, lastPrice, sort, categoryID, false)
 }
 
-func GetAllProdClient(search string, limit int, offset int, sort string, categoryID int) ([]models.Product, int, error) {
-	return getAllProducts(search, limit, offset, sort, categoryID, true)
+func GetAllProdClient(search string, limit int, lastID int, lastPrice float64, sort string, categoryID int) ([]models.Product, int, error) {
+	return getAllProducts(search, limit, lastID, lastPrice, sort, categoryID, true)
 }
 
-func getAllProducts(search string, limit int, offset int, sort string, categoryID int, clientOnly bool) ([]models.Product, int, error) {
+func getAllProducts(search string, limit int, lastID int, lastPrice float64, sort string, categoryID int, clientOnly bool) ([]models.Product, int, error) {
 	var totalCount int
 
-	orderBy := "p.id DESC"
-	switch sort {
-	case "price_asc":
-		orderBy = "min_price ASC"
-	case "price_desc":
-		orderBy = "min_price DESC"
-	}
+	// ГИБРИДНЫЙ ПОИСК:
+	// 1. Ищет точный корень слова через быстрый FTS индекс: to_tsvector @@ plainto_tsquery
+	// 2. Ищет вхождение подстроки через ILIKE (чтобы успешно находить "Товар№4" и "Товар №4")
+	whereClause := `WHERE ($1 = '' OR 
+		to_tsvector('russian', p.name) @@ plainto_tsquery('russian', $1) OR 
+		p.name ILIKE '%' || $1 || '%'
+	) AND ($2 = 0 OR p.category_id = $2)`
 
-	whereClause := "WHERE ($1 = '' OR p.name ILIKE '%%' || $1 || '%%') AND ($2 = 0 OR p.category_id = $2)"
 	if clientOnly {
 		whereClause += " AND (p.offer = true)"
 	}
 
 	var countQuery string
 	if clientOnly {
-
-		countQuery = fmt.Sprintf(`
-            SELECT COUNT(DISTINCT p.id) 
-            FROM products p
-            INNER JOIN product_offers o ON p.id = o.product_id
-            %s
-        `, whereClause)
+		countQuery = `
+			SELECT COUNT(DISTINCT p.id) 
+			FROM products p
+			INNER JOIN product_offers o ON p.id = o.product_id
+		` + whereClause
 	} else {
-
-		countQuery = fmt.Sprintf(`
-            SELECT COUNT(*) 
-            FROM products p
-            %s
-        `, whereClause)
+		countQuery = `
+			SELECT COUNT(*) 
+			FROM products p
+		` + whereClause
 	}
 
 	err := db.QueryRow(countQuery, search, categoryID).Scan(&totalCount)
@@ -57,24 +52,66 @@ func getAllProducts(search string, limit int, offset int, sort string, categoryI
 		return []models.Product{}, 0, nil
 	}
 
-	dataQuery := fmt.Sprintf(`
-        SELECT 
-            p.id, 
-            p.name, 
-            p.description, 
-            COALESCE(MIN(o.price), 0) as min_price, 
-            COALESCE(SUM(o.count), 0) as total_count, 
-            p.img_url, 
-            p.category_id
-        FROM products p
-        LEFT JOIN product_offers o ON p.id = o.product_id
-        %s
-        GROUP BY p.id
-        ORDER BY %s
-        LIMIT $3 OFFSET $4
-    `, whereClause, orderBy)
+	cursorClause := ""
+	var orderBy string
 
-	rows, err := db.Query(dataQuery, search, categoryID, limit, offset)
+	switch sort {
+	case "price_asc":
+		orderBy = "min_price ASC, p.id ASC"
+		if lastID > 0 {
+			cursorClause = fmt.Sprintf("HAVING (COALESCE(MIN(o.price), 0), p.id) > (%f, %d)", lastPrice, lastID)
+		}
+	case "price_desc":
+		orderBy = "min_price DESC, p.id DESC"
+		if lastID > 0 {
+			cursorClause = fmt.Sprintf("HAVING (COALESCE(MIN(o.price), 0), p.id) < (%f, %d)", lastPrice, lastID)
+		}
+	case "id_asc":
+		orderBy = "p.id ASC"
+		if lastID > 0 {
+			whereClause += fmt.Sprintf(" AND p.id > %d", lastID)
+		}
+	case "new":
+		// Если передан поисковый запрос, сначала выводим точные совпадения по длине строки,
+		// чтобы "Товар №4" был выше, чем "Товар №4005", а внутри совпадений — сортируем по новизне.
+		if search != "" {
+			orderBy = "ts_rank(to_tsvector('russian', p.name), plainto_tsquery('russian', $1)) DESC, LENGTH(p.name) ASC, p.id DESC"
+		} else {
+			orderBy = "p.id DESC"
+		}
+		if lastID > 0 {
+			whereClause += fmt.Sprintf(" AND p.id < %d", lastID)
+		}
+	default:
+		if search != "" {
+			orderBy = "ts_rank(to_tsvector('russian', p.name), plainto_tsquery('russian', $1)) DESC, LENGTH(p.name) ASC, p.id DESC"
+		} else {
+			orderBy = "p.id DESC"
+		}
+		if lastID > 0 {
+			whereClause += fmt.Sprintf(" AND p.id < %d", lastID)
+		}
+	}
+
+	dataQuery := `
+		SELECT 
+			p.id, 
+			p.name, 
+			p.description, 
+			COALESCE(MIN(o.price), 0) as min_price, 
+			COALESCE(SUM(o.count), 0) as total_count, 
+			p.img_url, 
+			p.category_id
+		FROM products p
+		LEFT JOIN product_offers o ON p.id = o.product_id
+	` + whereClause + `
+		GROUP BY p.id
+	` + cursorClause + `
+		ORDER BY ` + orderBy + `
+		LIMIT $3
+	`
+
+	rows, err := db.Query(dataQuery, search, categoryID, limit)
 	if err != nil {
 		return nil, 0, fmt.Errorf("data query failed: %w", err)
 	}
