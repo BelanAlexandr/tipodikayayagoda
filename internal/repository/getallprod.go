@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"tipodikayayagoda/internal/models"
 )
 
@@ -17,13 +18,30 @@ func GetAllProdClient(search string, limit int, lastID int, lastPrice float64, l
 func getAllProducts(search string, limit int, lastID int, lastPrice float64, lastRank float64, lastLength int, sort string, categoryID int, clientOnly bool) ([]models.Product, int, error) {
 	var totalCount int
 
-	whereClause := `WHERE ($1 = '' OR 
-		to_tsvector('russian', p.name) @@ plainto_tsquery('russian', $1) OR 
-		p.name ILIKE '%' || $1 || '%'
-	) AND ($2 = 0 OR p.category_id = $2)`
+	var countConditions []string
+	var countArgs []interface{}
+	argIdx := 1
+
+	if search != "" {
+		searchCond := fmt.Sprintf("(p.name_tsvector @@ plainto_tsquery('russian', $%d) OR p.name ILIKE '%%' || $%d || '%%')", argIdx, argIdx)
+		countConditions = append(countConditions, searchCond)
+		countArgs = append(countArgs, search)
+		argIdx++
+	}
+
+	if categoryID > 0 {
+		countConditions = append(countConditions, fmt.Sprintf("p.category_id = $%d", argIdx))
+		countArgs = append(countArgs, categoryID)
+		argIdx++
+	}
 
 	if clientOnly {
-		whereClause += " AND (p.offer = true)"
+		countConditions = append(countConditions, "p.offer = true")
+	}
+
+	whereClause := ""
+	if len(countConditions) > 0 {
+		whereClause = "WHERE " + strings.Join(countConditions, " AND ")
 	}
 
 	var countQuery string
@@ -34,13 +52,10 @@ func getAllProducts(search string, limit int, lastID int, lastPrice float64, las
 			INNER JOIN product_offers o ON p.id = o.product_id
 		` + whereClause
 	} else {
-		countQuery = `
-			SELECT COUNT(*) 
-			FROM products p
-		` + whereClause
+		countQuery = `SELECT COUNT(*) FROM products p ` + whereClause
 	}
 
-	err := db.QueryRow(countQuery, search, categoryID).Scan(&totalCount)
+	err := db.QueryRow(countQuery, countArgs...).Scan(&totalCount)
 	if err != nil {
 		return nil, 0, fmt.Errorf("count query failed: %w", err)
 	}
@@ -49,105 +64,111 @@ func getAllProducts(search string, limit int, lastID int, lastPrice float64, las
 		return []models.Product{}, 0, nil
 	}
 
-	cursorClause := ""
-	var orderBy string
+	var dataArgs []interface{}
+	dIdx := 1
 
-	queryParams := []interface{}{search, categoryID, limit}
+	searchArgNum := 0
+	if search != "" {
+		dataArgs = append(dataArgs, search)
+		searchArgNum = dIdx
+		dIdx++
+	}
+
+	catArgNum := 0
+	if categoryID > 0 {
+		dataArgs = append(dataArgs, categoryID)
+		catArgNum = dIdx
+		dIdx++
+	}
+
+	var dataConditions []string
+	if search != "" {
+		searchCond := fmt.Sprintf("(p.name_tsvector @@ plainto_tsquery('russian', $%d) OR p.name ILIKE '%%' || $%d || '%%')", searchArgNum, searchArgNum)
+		dataConditions = append(dataConditions, searchCond)
+	}
+	if categoryID > 0 {
+		dataConditions = append(dataConditions, fmt.Sprintf("p.category_id = $%d", catArgNum))
+	}
+	if clientOnly {
+		dataConditions = append(dataConditions, "p.offer = true")
+	}
+
+	var orderBy string
 
 	switch sort {
 	case "price_asc":
-		orderBy = "min_price ASC, p.id ASC"
+		orderBy = "p.min_price ASC, p.id ASC"
 		if lastID > 0 {
-			cursorClause = fmt.Sprintf("HAVING (COALESCE(MIN(o.price), 0), p.id) > (%f, %d)", lastPrice, lastID)
+			dataConditions = append(dataConditions, fmt.Sprintf("(p.min_price, p.id) > ($%d, $%d)", dIdx, dIdx+1))
+			dataArgs = append(dataArgs, lastPrice, lastID)
+			dIdx += 2
 		}
 	case "price_desc":
-		orderBy = "min_price DESC, p.id DESC"
+		orderBy = "p.min_price DESC, p.id DESC"
 		if lastID > 0 {
-			cursorClause = fmt.Sprintf("HAVING (COALESCE(MIN(o.price), 0), p.id) < (%f, %d)", lastPrice, lastID)
+			dataConditions = append(dataConditions, fmt.Sprintf("(p.min_price, p.id) < ($%d, $%d)", dIdx, dIdx+1))
+			dataArgs = append(dataArgs, lastPrice, lastID)
+			dIdx += 2
 		}
 	case "id_asc":
 		orderBy = "p.id ASC"
 		if lastID > 0 {
-			whereClause += fmt.Sprintf(" AND p.id > %d", lastID)
+			dataConditions = append(dataConditions, fmt.Sprintf("p.id > $%d", dIdx))
+			dataArgs = append(dataArgs, lastID)
+			dIdx++
 		}
 	default:
 		if search != "" {
-			orderBy = "ts_rank(to_tsvector('russian', p.name), plainto_tsquery('russian', $1)) DESC, LENGTH(p.name) ASC, p.id DESC"
-
+			orderBy = "rank DESC, LENGTH(p.name) ASC, p.id DESC"
 			if lastID > 0 {
-				queryParams = append(queryParams, lastRank, lastLength, lastID)
-				rankIdx := len(queryParams) - 2
-				lenIdx := len(queryParams) - 1
-				idIdx := len(queryParams)
-
-				whereClause += fmt.Sprintf(` AND (
-					ts_rank(to_tsvector('russian', p.name), plainto_tsquery('russian', $1)) < $%d
-					OR (
-						ts_rank(to_tsvector('russian', p.name), plainto_tsquery('russian', $1)) = $%d 
-						AND LENGTH(p.name) > $%d
-					)
-					OR (
-						ts_rank(to_tsvector('russian', p.name), plainto_tsquery('russian', $1)) = $%d 
-						AND LENGTH(p.name) = $%d 
-						AND p.id < $%d
-					)
-				)`, rankIdx, rankIdx, lenIdx, rankIdx, lenIdx, idIdx)
+				dataConditions = append(dataConditions, fmt.Sprintf(`(
+					ts_rank(p.name_tsvector, plainto_tsquery('russian', $%d)) < $%d
+					OR (ts_rank(p.name_tsvector, plainto_tsquery('russian', $%d)) = $%d AND LENGTH(p.name) > $%d)
+					OR (ts_rank(p.name_tsvector, plainto_tsquery('russian', $%d)) = $%d AND LENGTH(p.name) = $%d AND p.id < $%d)
+				)`, searchArgNum, dIdx, searchArgNum, dIdx, dIdx+1, searchArgNum, dIdx, dIdx+1, dIdx+2))
+				dataArgs = append(dataArgs, lastRank, lastLength, lastID)
+				dIdx += 3
 			}
 		} else {
 			orderBy = "p.id DESC"
 			if lastID > 0 {
-				whereClause += fmt.Sprintf(" AND p.id < %d", lastID)
+				dataConditions = append(dataConditions, fmt.Sprintf("p.id < $%d", dIdx))
+				dataArgs = append(dataArgs, lastID)
+				dIdx++
 			}
 		}
 	}
 
-	var dataQuery string
-
-	if sort == "price_asc" || sort == "price_desc" {
-
-		dataQuery = `
-			SELECT 
-				p.id, 
-				p.name, 
-				p.description, 
-				COALESCE(MIN(o.price), 0) as min_price, 
-				COALESCE(SUM(o.count), 0) as total_count, 
-				p.img_url, 
-				p.category_id,
-				0.0 as rank
-			FROM products p
-			LEFT JOIN product_offers o ON p.id = o.product_id
-		` + whereClause + `
-			GROUP BY p.id
-		` + cursorClause + `
-			ORDER BY ` + orderBy + `
-			LIMIT $3`
-	} else {
-
-		var rankField string
-		if search != "" {
-			rankField = "ts_rank(to_tsvector('russian', p.name), plainto_tsquery('russian', $1)) as rank"
-		} else {
-			rankField = "0.0 as rank"
-		}
-
-		dataQuery = fmt.Sprintf(`
-			SELECT
-				p.id, 
-				p.name, 
-				p.description, 
-				(SELECT COALESCE(MIN(price), 0) FROM product_offers WHERE product_id = p.id) as min_price, 
-				(SELECT COALESCE(SUM(count), 0) FROM product_offers WHERE product_id = p.id) as total_count, 
-				p.img_url, 
-				p.category_id,
-				%s
-			FROM products p
-			%s
-			ORDER BY %s
-			LIMIT $3`, rankField, whereClause, orderBy)
+	dataWhere := ""
+	if len(dataConditions) > 0 {
+		dataWhere = "WHERE " + strings.Join(dataConditions, " AND ")
 	}
 
-	rows, err := db.Query(dataQuery, queryParams...)
+	dataArgs = append(dataArgs, limit)
+	limitArgNum := dIdx
+
+	rankSelect := "0.0 as rank"
+	if search != "" && sort != "price_asc" && sort != "price_desc" && sort != "id_asc" {
+		rankSelect = fmt.Sprintf("ts_rank(p.name_tsvector, plainto_tsquery('russian', $%d)) as rank", searchArgNum)
+	}
+
+	dataQuery := fmt.Sprintf(`
+		SELECT 
+			p.id, p.name, p.description, 
+			p.min_price, 
+			COALESCE(agg.total_count, 0) as total_count, 
+			p.img_url, p.category_id, %s
+		FROM products p
+		LEFT JOIN LATERAL (
+			SELECT SUM(count) as total_count 
+			FROM product_offers 
+			WHERE product_id = p.id
+		) agg ON true
+		%s
+		ORDER BY %s
+		LIMIT $%d`, rankSelect, dataWhere, orderBy, limitArgNum)
+
+	rows, err := db.Query(dataQuery, dataArgs...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("data query failed: %w", err)
 	}
@@ -161,14 +182,9 @@ func getAllProducts(search string, limit int, lastID int, lastPrice float64, las
 		var rank float64
 
 		err := rows.Scan(
-			&product.ID,
-			&product.Name,
-			&desc,
-			&product.Price,
-			&product.Count,
-			&imgURL,
-			&product.Category_id,
-			&rank,
+			&product.ID, &product.Name, &desc,
+			&product.Price, &product.Count, &imgURL,
+			&product.Category_id, &rank,
 		)
 		if err != nil {
 			return nil, 0, fmt.Errorf("row scan failed: %w", err)
@@ -180,9 +196,7 @@ func getAllProducts(search string, limit int, lastID int, lastPrice float64, las
 		if imgURL.Valid {
 			product.ImgURL = imgURL.String
 		}
-
 		product.Rank = rank
-
 		products = append(products, product)
 	}
 

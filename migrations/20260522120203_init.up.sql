@@ -47,8 +47,9 @@ CREATE TABLE notifications (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_products_name_fts 
-ON products USING gin (to_tsvector('russian', name));
+
+
+CREATE INDEX idx_products_tsvector ON products USING gin(name_tsvector);
 
 CREATE INDEX IF NOT EXISTS idx_products_name_trgm 
 ON products USING gin (name gin_trgm_ops);
@@ -58,7 +59,7 @@ CREATE INDEX idx_products_category_id ON products(category_id);
 CREATE INDEX idx_products_id ON products(id);
 CREATE INDEX idx_product_offers_seller_id ON product_offers(seller_id);
 CREATE INDEX idx_product_offers_product_id ON product_offers(product_id);
-CREATE INDEX idx_product_offers_pid_price ON product_offers(product_id, price);
+CREATE INDEX idx_products_price_id ON products(min_price, id);
 
 CREATE INDEX idx_notifications_user_unread ON notifications (user_id) WHERE is_read = FALSE;
 

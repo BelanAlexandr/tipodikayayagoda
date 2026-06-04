@@ -293,12 +293,13 @@ const canAddProduct = "{{.CanAddProduct}}".trim() === "true";
 /* ===== СОСТОЯНИЕ КУРСОРНОЙ ПАГИНАЦИИ ===== */
 let currentPage = 1;
 const limit = 10; 
+let totalCount = 0; // Сделали переменной уровня модуля, чтобы она сохранялась при переходах
 
 // Параметры текущего курсора для отправки в API
 let currentLastId = 0;
 let currentLastPrice = 0.0;
-let currentLastRank = 0.0;   // <-- НАШЕ ОБНОВЛЕНИЕ
-let currentLastLength = 0;   // <-- НАШЕ ОБНОВЛЕНИЕ
+let currentLastRank = 0.0;   
+let currentLastLength = 0;   
 
 // Флаг прыжка: "first", "last" или ""
 let isJumpToTarget = "";
@@ -328,10 +329,11 @@ document.getElementById("headerButtons").innerHTML = headerButtons;
 
 function searchProducts() {
     currentPage = 1;
+    totalCount = 0; // Сбрасываем счетчик при начале нового поиска
     currentLastId = 0;
     currentLastPrice = 0.0;
-    currentLastRank = 0.0;    // Сбрасываем при новом поиске
-    currentLastLength = 0;    // Сбрасываем при новом поиске
+    currentLastRank = 0.0;    
+    currentLastLength = 0;    
     isJumpToTarget = "";
     pageHistory = []; 
     loadProducts();
@@ -397,7 +399,7 @@ async function loadProducts() {
     const queryLastRank = (isJumpToTarget !== "") ? 0.0 : currentLastRank;
     const queryLastLength = (isJumpToTarget !== "") ? 0 : currentLastLength;
 
-    // Добавляем новые query-параметры в URL для бэкенда
+    // Ссылка на бэкенд с курсорными токенами
     const url = `/api/index?search=${encodeURIComponent(search)}&limit=${limit}&sort=${sort}&category=${category}&last_id=${queryLastId}&last_price=${queryLastPrice}&last_rank=${queryLastRank}&last_length=${queryLastLength}`;
 
     try {
@@ -405,11 +407,10 @@ async function loadProducts() {
         const data = await res.json();
 
         let products = [];
-        let totalCount = 0;
 
         if (data && Array.isArray(data.products)) {
             products = data.products;
-            totalCount = data.totalCount;
+            totalCount = data.totalCount; // Перезаписываем глобальную переменную количеством для текущего поиска
         }
 
         const container = document.getElementById("products");
@@ -534,8 +535,8 @@ function renderCursorPagination(products, totalCount) {
             const prevCursor = pageHistory.pop();
             currentLastId = prevCursor.lastId;
             currentLastPrice = prevCursor.lastPrice;
-            currentLastRank = prevCursor.lastRank;     // <-- НАШЕ ОБНОВЛЕНИЕ
-            currentLastLength = prevCursor.lastLength; // <-- НАШЕ ОБНОВЛЕНИЕ
+            currentLastRank = prevCursor.lastRank;     
+            currentLastLength = prevCursor.lastLength; 
             
             loadProducts();
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -554,19 +555,18 @@ function renderCursorPagination(products, totalCount) {
     nextBtn.disabled = currentPage === totalPages || products.length < limit;
     nextBtn.onclick = () => {
         if (products.length === limit) {
-            // Запоминаем всю пачку текущих маркеров в историю перед переходом
+            // Сохраняем предыдущий курсор в стек
             pageHistory.push({ 
                 lastId: currentLastId, 
                 lastPrice: currentLastPrice,
-                lastRank: currentLastRank,      // <-- НАШЕ ОБНОВЛЕНИЕ
-                lastLength: currentLastLength   // <-- НАШЕ ОБНОВЛЕНИЕ
+                lastRank: currentLastRank,      
+                lastLength: currentLastLength   
             });
             currentPage++;
             
             const lastProduct = products[products.length - 1];
             currentLastId = lastProduct.id || lastProduct.ID;
             
-            // Запоминаем цену
             if (lastProduct.min_price !== undefined) {
                 currentLastPrice = lastProduct.min_price;
             } else if (lastProduct.Price !== undefined) {
@@ -575,10 +575,8 @@ function renderCursorPagination(products, totalCount) {
                 currentLastPrice = lastProduct.price || 0.0;
             }
 
-            // Запоминаем Rank (бэкенд должен возвращать поле rank или Rank)
             currentLastRank = lastProduct.rank !== undefined ? lastProduct.rank : (lastProduct.Rank || 0.0);
 
-            // Длину строки высчитываем прямо из имени последнего товара
             const lastProductName = lastProduct.name || lastProduct.Name || "";
             currentLastLength = lastProductName.length; 
 
