@@ -187,7 +187,7 @@
         #notifications-dropdown {
             display: none;
             position: absolute;
-            left: 0;
+            right: 0;
             top: 40px;
             width: 320px;
             background: white;
@@ -293,16 +293,13 @@ const canAddProduct = "{{.CanAddProduct}}".trim() === "true";
 /* ===== СОСТОЯНИЕ КУРСОРНОЙ ПАГИНАЦИИ ===== */
 let currentPage = 1;
 const limit = 10; 
-let totalCount = 0; // Сделали переменной уровня модуля, чтобы она сохранялась при переходах
+let totalCount = 0; 
 
 // Параметры текущего курсора для отправки в API
 let currentLastId = 0;
 let currentLastPrice = 0.0;
 let currentLastRank = 0.0;   
 let currentLastLength = 0;   
-
-// Флаг прыжка: "first", "last" или ""
-let isJumpToTarget = "";
 
 // Стек для хранения истории курсоров (для кнопки "Назад")
 let pageHistory = [];
@@ -329,12 +326,11 @@ document.getElementById("headerButtons").innerHTML = headerButtons;
 
 function searchProducts() {
     currentPage = 1;
-    totalCount = 0; // Сбрасываем счетчик при начале нового поиска
+    totalCount = 0; 
     currentLastId = 0;
     currentLastPrice = 0.0;
     currentLastRank = 0.0;    
     currentLastLength = 0;    
-    isJumpToTarget = "";
     pageHistory = []; 
     loadProducts();
 }
@@ -386,21 +382,8 @@ async function loadProducts() {
     let sort = document.getElementById("sortInput").value; 
     const category = document.getElementById("categoryInput").value; 
 
-    // МАГИЯ ИНВЕРСИИ: При прыжке в конец разворачиваем сортировку для базы данных
-    if (isJumpToTarget === "last") {
-        if (sort === "price_asc") sort = "price_desc";
-        else if (sort === "price_desc") sort = "price_asc";
-        else sort = "id_asc"; 
-    }
-
-    // При прямых прыжках на Края индекса (первая/последняя) обнуляем курсоры
-    const queryLastId = (isJumpToTarget !== "") ? 0 : currentLastId;
-    const queryLastPrice = (isJumpToTarget !== "") ? 0.0 : currentLastPrice;
-    const queryLastRank = (isJumpToTarget !== "") ? 0.0 : currentLastRank;
-    const queryLastLength = (isJumpToTarget !== "") ? 0 : currentLastLength;
-
     // Ссылка на бэкенд с курсорными токенами
-    const url = `/api/index?search=${encodeURIComponent(search)}&limit=${limit}&sort=${sort}&category=${category}&last_id=${queryLastId}&last_price=${queryLastPrice}&last_rank=${queryLastRank}&last_length=${queryLastLength}`;
+    const url = `/api/index?search=${encodeURIComponent(search)}&limit=${limit}&sort=${sort}&category=${category}&last_id=${currentLastId}&last_price=${currentLastPrice}&last_rank=${currentLastRank}&last_length=${currentLastLength}`;
 
     try {
         const res = await fetch(url, { credentials: "include" });
@@ -410,7 +393,7 @@ async function loadProducts() {
 
         if (data && Array.isArray(data.products)) {
             products = data.products;
-            totalCount = data.totalCount; // Перезаписываем глобальную переменную количеством для текущего поиска
+            totalCount = data.totalCount; 
         }
 
         const container = document.getElementById("products");
@@ -420,14 +403,6 @@ async function loadProducts() {
             container.innerHTML = "Товары не найдены.";
             document.getElementById("pagination").innerHTML = "";
             return;
-        }
-
-        // Если прыгали на последнюю — разворачиваем инвертированный массив назад
-        if (isJumpToTarget === "last") {
-            products.reverse();
-            isJumpToTarget = ""; 
-        } else if (isJumpToTarget === "first") {
-            isJumpToTarget = "";
         }
 
         container.className = "products-grid";
@@ -507,24 +482,7 @@ function renderCursorPagination(products, totalCount) {
 
     const totalPages = Math.ceil(totalCount / limit) || 1;
 
-    // 1. Кнопка "« Первая"
-    const firstBtn = document.createElement("button");
-    firstBtn.className = "pagination-btn";
-    firstBtn.innerText = "« Первая";
-    firstBtn.disabled = currentPage === 1;
-    firstBtn.onclick = () => {
-        currentPage = 1;
-        currentLastId = 0;
-        currentLastPrice = 0.0;
-        currentLastRank = 0.0;
-        currentLastLength = 0;
-        pageHistory = [];
-        isJumpToTarget = "first";
-        loadProducts();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    // 2. Кнопка "‹ Назад"
+    // 1. Кнопка "‹ Назад"
     const backBtn = document.createElement("button");
     backBtn.className = "pagination-btn";
     backBtn.innerText = "‹ Назад";
@@ -543,12 +501,12 @@ function renderCursorPagination(products, totalCount) {
         }
     };
 
-    // 3. Индикатор страниц
+    // 2. Индикатор страниц
     const indicator = document.createElement("span");
     indicator.className = "page-indicator";
     indicator.innerText = `Страница ${currentPage} из ${totalPages}`;
 
-    // 4. Кнопка "Вперед ›"
+    // 3. Кнопка "Вперед ›"
     const nextBtn = document.createElement("button");
     nextBtn.className = "pagination-btn";
     nextBtn.innerText = "Вперед ›";
@@ -585,28 +543,9 @@ function renderCursorPagination(products, totalCount) {
         }
     };
 
-    // 5. Кнопка "Последняя »"
-    const lastBtn = document.createElement("button");
-    lastBtn.className = "pagination-btn";
-    lastBtn.innerText = "Последняя »";
-    lastBtn.disabled = currentPage === totalPages || products.length < limit;
-    lastBtn.onclick = () => {
-        currentPage = totalPages;
-        currentLastId = 0;
-        currentLastPrice = 0.0;
-        currentLastRank = 0.0;
-        currentLastLength = 0;
-        pageHistory = []; 
-        isJumpToTarget = "last"; 
-        loadProducts();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    paginationContainer.appendChild(firstBtn);
     paginationContainer.appendChild(backBtn);
     paginationContainer.appendChild(indicator);
     paginationContainer.appendChild(nextBtn);
-    paginationContainer.appendChild(lastBtn);
 }
 
 // Навигация

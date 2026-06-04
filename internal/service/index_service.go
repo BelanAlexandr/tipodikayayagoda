@@ -25,7 +25,10 @@ func GetProducts(role int, userID int, search string, lastID int, lastPrice floa
 		return products, totalCount, nil
 	}
 
-	products, totalCount := repository.GetProdpoID(userID, search, limit, lastID, lastPrice, sort, category)
+	products, totalCount, err := repository.GetProdpoID(userID, search, limit, lastID, lastPrice, lastRank, lastLength, sort, category)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get products by ID: %w", err)
+	}
 
 	return products, totalCount, nil
 }

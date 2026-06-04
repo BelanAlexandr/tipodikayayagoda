@@ -1,115 +1,116 @@
 package repository
 
 import (
-	"database/sql"
 	"fmt"
+	"strings"
 	"tipodikayayagoda/internal/models"
 )
 
-func GetProdpoID(userID int, search string, limit int, lastID int, lastPrice float64, sort string, categoryID int) ([]models.Product, int) {
-	var imgURL sql.NullString
-	var desc sql.NullString
+func GetProdpoID(userID int, search string, limit int, lastID int, lastPrice float64, lastRank float64, lastLength int, sort string, categoryID int) ([]models.Product, int, error) {
 	var totalCount int
+	var countConditions []string
+	var countArgs []interface{}
+	argIdx := 1
 
-	whereClause := `
-		WHERE o.seller_id = $1 
-		  AND ($2 = '' OR p.name %% $2)
-		  AND ($3 = 0 OR p.category_id = $3)
-	`
+	if search != "" {
+		searchCond := fmt.Sprintf("(p.name_tsvector @@ plainto_tsquery('russian', $%d) OR p.name ILIKE '%%' || $%d || '%%')", argIdx, argIdx)
+		countConditions = append(countConditions, searchCond)
+		countArgs = append(countArgs, search)
+		argIdx++
+	}
+	if categoryID > 0 {
+		countConditions = append(countConditions, fmt.Sprintf("p.category_id = $%d", argIdx))
+		countArgs = append(countArgs, categoryID)
+		argIdx++
+	}
+	countConditions = append(countConditions, fmt.Sprintf("o.seller_id = $%d", argIdx))
+	countArgs = append(countArgs, userID)
+	argIdx++
+	whereClause := ""
+	if len(countConditions) > 0 {
+		whereClause = "WHERE " + strings.Join(countConditions, " AND ")
+	}
 
-	countQuery := fmt.Sprintf(`
-		SELECT COUNT(*) 
-		FROM products p
-		INNER JOIN product_offers o ON p.id = o.product_id
-		%s
-	`, whereClause)
+	countQuery := `
+			SELECT COUNT(DISTINCT p.id) 
+			FROM products p
+			INNER JOIN product_offers o ON p.id = o.product_id 
+		` + whereClause
+	err := db.QueryRow(countQuery, countArgs...).Scan(&totalCount)
 
-	err := db.QueryRow(countQuery, userID, search, categoryID).Scan(&totalCount)
 	if err != nil {
-		panic(err)
+		return nil, 0, fmt.Errorf("count query failed: %w", err)
 	}
-
 	if totalCount == 0 {
-		return []models.Product{}, 0
+		return []models.Product{}, 0, nil
+	}
+	var dataArgs []interface{}
+	dIdx := 1
+
+	searchArgNum := 0
+	if search != "" {
+		dataArgs = append(dataArgs, search)
+		searchArgNum = dIdx
+		dIdx++
 	}
 
+	catArgNum := 0
+	if categoryID > 0 {
+		dataArgs = append(dataArgs, categoryID)
+		catArgNum = dIdx
+		dIdx++
+	}
+	var dataConditions []string
+	if search != "" {
+		searchCond := fmt.Sprintf("(p.name_tsvector @@ plainto_tsquery('russian', $%d) OR p.name ILIKE '%%' || $%d || '%%')", searchArgNum, searchArgNum)
+		dataConditions = append(dataConditions, searchCond)
+	}
+	if categoryID > 0 {
+		dataConditions = append(dataConditions, fmt.Sprintf("p.category_id = $%d", catArgNum))
+	}
 	var orderBy string
-
 	switch sort {
 	case "price_asc":
-		orderBy = "o.price ASC, p.id ASC"
+		orderBy = "p.min_price ASC, p.id ASC"
 		if lastID > 0 {
-
-			whereClause += fmt.Sprintf(" AND (o.price, p.id) > (%f, %d)", lastPrice, lastID)
+			dataConditions = append(dataConditions, fmt.Sprintf("(p.min_price, p.id) > ($%d, $%d)", dIdx, dIdx+1))
+			dataArgs = append(dataArgs, lastPrice, lastID)
+			dIdx += 2
 		}
 	case "price_desc":
-		orderBy = "o.price DESC, p.id DESC"
+		orderBy = "p.min_price DESC, p.id DESC"
 		if lastID > 0 {
-			whereClause += fmt.Sprintf(" AND (o.price, p.id) < (%f, %d)", lastPrice, lastID)
+			dataConditions = append(dataConditions, fmt.Sprintf("(p.min_price, p.id) < ($%d, $%d)", dIdx, dIdx+1))
+			dataArgs = append(dataArgs, lastPrice, lastID)
+			dIdx += 2
 		}
 	case "id_asc":
-
 		orderBy = "p.id ASC"
 		if lastID > 0 {
-			whereClause += fmt.Sprintf(" AND p.id > %d", lastID)
-		}
-	case "new":
-		orderBy = "p.id DESC"
-		if lastID > 0 {
-			whereClause += fmt.Sprintf(" AND p.id < %d", lastID)
+			dataConditions = append(dataConditions, fmt.Sprintf("p.id > $%d", dIdx))
+			dataArgs = append(dataArgs, lastID)
+			dIdx++
 		}
 	default:
-
 		if search != "" {
-			orderBy = "similarity(p.name, $2) DESC, p.id DESC"
+			orderBy = "rank DESC, LENGTH(p.name) ASC, p.id DESC"
+			if lastID > 0 {
+				dataConditions = append(dataConditions, fmt.Sprintf(`(
+					ts_rank(p.name_tsvector, plainto_tsquery('russian', $%d)) < $%d
+					OR (ts_rank(p.name_tsvector, plainto_tsquery('russian', $%d)) = $%d AND LENGTH(p.name) > $%d)
+					OR (ts_rank(p.name_tsvector, plainto_tsquery('russian', $%d)) = $%d AND LENGTH(p.name) = $%d AND p.id < $%d)
+				)`, searchArgNum, dIdx, searchArgNum, dIdx, dIdx+1, searchArgNum, dIdx, dIdx+1, dIdx+2))
+				dataArgs = append(dataArgs, lastRank, lastLength, lastID)
+				dIdx += 3
+			}
 		} else {
 			orderBy = "p.id DESC"
-		}
-		if lastID > 0 {
-			whereClause += fmt.Sprintf(" AND p.id < %d", lastID)
+			if lastID > 0 {
+				dataConditions = append(dataConditions, fmt.Sprintf("p.id < $%d", dIdx))
+				dataArgs = append(dataArgs, lastID)
+				dIdx++
+			}
 		}
 	}
-
-	dataQuery := fmt.Sprintf(`
-		SELECT p.id, p.name, p.description, o.price, o.count, p.img_url, p.category_id
-		FROM products p
-		INNER JOIN product_offers o ON p.id = o.product_id
-		%s
-		ORDER BY %s
-		LIMIT $4
-	`, whereClause, orderBy)
-
-	rows, err := db.Query(dataQuery, userID, search, categoryID, limit)
-	if err != nil {
-		panic(err)
-	}
-	defer rows.Close()
-
-	var products []models.Product
-	for rows.Next() {
-		var product models.Product
-
-		err := rows.Scan(
-			&product.ID,
-			&product.Name,
-			&desc,
-			&product.Price,
-			&product.Count,
-			&imgURL,
-			&product.Category_id,
-		)
-		if err != nil {
-			panic(err)
-		}
-
-		if desc.Valid {
-			product.Description = desc.String
-		}
-		if imgURL.Valid {
-			product.ImgURL = imgURL.String
-		}
-		products = append(products, product)
-	}
-
-	return products, totalCount
+	return products, totalCount, nil
 }
