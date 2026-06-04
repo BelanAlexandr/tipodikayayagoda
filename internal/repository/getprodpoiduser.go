@@ -65,8 +65,7 @@ func GetProdpoID(userID int, search string, limit int, lastID int, lastPrice flo
 
 	var dataConditions []string
 	if search != "" {
-		searchCond := fmt.Sprintf("(p.name_tsvector @@ plainto_tsquery('russian', $%d) OR p.name ILIKE '%%' || $%d || '%%')", searchArgNum, searchArgNum)
-		dataConditions = append(dataConditions, searchCond)
+		dataConditions = append(dataConditions, fmt.Sprintf("(p.name_tsvector @@ plainto_tsquery('russian', $%d) OR p.name ILIKE '%%' || $%d || '%%')", searchArgNum, searchArgNum))
 	}
 	if categoryID > 0 {
 		dataConditions = append(dataConditions, fmt.Sprintf("p.category_id = $%d", catArgNum))
