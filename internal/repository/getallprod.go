@@ -179,12 +179,11 @@ func getAllProducts(search string, limit int, lastID int, lastPrice float64, las
 		var product models.Product
 		var imgURL sql.NullString
 		var desc sql.NullString
-		var rank float64
 
 		err := rows.Scan(
 			&product.ID, &product.Name, &desc,
 			&product.Price, &product.Count, &imgURL,
-			&product.Category_id, &rank,
+			&product.Category_id, &product.Rank,
 		)
 		if err != nil {
 			return nil, 0, fmt.Errorf("row scan failed: %w", err)
@@ -196,7 +195,6 @@ func getAllProducts(search string, limit int, lastID int, lastPrice float64, las
 		if imgURL.Valid {
 			product.ImgURL = imgURL.String
 		}
-		product.Rank = rank
 		products = append(products, product)
 	}
 

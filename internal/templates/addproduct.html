@@ -245,6 +245,9 @@ async function loadCategories() {
             return false;
         }
 
+        // Сохраняем текущее выбранное значение (если товар загрузился быстрее категорий)
+        const currentValue = select.value;
+
         select.innerHTML = '<option value="">-- Выберите категорию --</option>';
         categories.forEach(cat => {
             const option = document.createElement("option");
@@ -253,39 +256,61 @@ async function loadCategories() {
             select.appendChild(option);
         });
 
+        // Возвращаем выбранную категорию на место
+        if (currentValue) {
+            select.value = currentValue;
+        }
+
         return true;
     } catch (err) {
-        console.error(err);
-        document.getElementById("category_id").innerHTML = '<option value="">Ошибка загрузки</option>';
+        console.error("Ошибка при загрузке категорий:", err);
+        document.getElementById("category_id").innerHTML = '<option value="">Ошибка загрузки категорий</option>';
         return false;
     }
 }
 
-/* Инициализация формы */
-async function initForm() {
-    const categoriesLoaded = await loadCategories();
+/* Загрузка данных существующего товара */
+async function loadProductData() {
+    if (!isEdit) return;
 
-    if (isEdit && categoriesLoaded) {
-        document.getElementById("title").innerText = "Редактировать товар";
-        document.getElementById("submitBtn").innerText = "Сохранить";
+    // Меняем тексты интерфейса под режим редактирования
+    document.getElementById("title").innerText = "Редактировать товар";
+    document.getElementById("submitBtn").innerText = "Сохранить";
 
-        try {
-            const res = await fetch("/api/product/" + productId, {
-                credentials: "include"
-            });
-            const p = await res.json();
-
-            document.getElementById("name").value = p.name || "";
-            document.getElementById("description").value = p.description || "";
-
-            if (p.category_id) {
-                document.getElementById("category_id").value = p.category_id;
-            }
-
-        } catch (err) {
-            console.error(err);
+    try {
+        const res = await fetch("/api/product?id=" + productId, {
+            credentials: "include"
+        });
+        
+        if (!res.ok) {
+            throw new Error(`Ошибка сервера: ${res.status}`);
         }
+
+        const p = await res.json();
+
+        // Физическое заполнение текстовых полей данными из БД
+        document.getElementById("name").value = p.name || "";
+        document.getElementById("description").value = p.description || "";
+
+        // Установка сохраненной категории товара
+        if (p.category_id) {
+            document.getElementById("category_id").value = p.category_id;
+        }
+
+    } catch (err) {
+        console.error("Ошибка при получении данных товара:", err);
+        const message = document.getElementById("message");
+        message.className = "message error";
+        message.innerText = "Не удалось загрузить данные товара для редактирования.";
     }
+}
+
+/* Инициализация формы (Запуск процессов параллельно) */
+function initForm() {
+    Promise.all([
+        loadCategories(),
+        loadProductData()
+    ]).catch(err => console.error("Общая ошибка инициализации формы:", err));
 }
 
 /* Отправка формы */
@@ -343,12 +368,13 @@ document.getElementById("productForm").addEventListener("submit", async function
 /* Назад */
 function goBack() {
     if (isEdit) {
-        window.location.href = "/product/" + productId;
+        window.location.href = "/product?id=" + productId;
     } else {
         window.location.href = "/index";
     }
 }
 
+// Запуск инициализации формы
 initForm();
 
 </script>

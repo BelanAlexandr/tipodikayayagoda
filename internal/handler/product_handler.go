@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -40,6 +41,7 @@ func ProductShow(c *gin.Context) {
 }
 
 func Product(c *gin.Context) {
+	fmt.Println("aa")
 	userID, existsID := c.Get("userID")
 	userRole, existsRole := c.Get("userRole")
 	if !existsID || !existsRole {
@@ -48,6 +50,7 @@ func Product(c *gin.Context) {
 	}
 	idStr := c.Query("id")
 	idd, err := strconv.Atoi(idStr)
+
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid product id"})
 		return
