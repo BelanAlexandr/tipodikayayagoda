@@ -1,4 +1,4 @@
- CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 
 CREATE TABLE roledictionary (
@@ -27,7 +27,9 @@ CREATE TABLE products (
     description VARCHAR(255) NOT NULL, 
     img_url VARCHAR(255),
     offer BOOLEAN NOT NULL DEFAULT FALSE,
-    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT
+    min_price NUMERIC(10, 2) NOT NULL,
+    category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
+    name_tsvector TSVECTOR GENERATED ALWAYS AS (to_tsvector('russian', name)) STORED
 );
 
 CREATE TABLE product_offers (

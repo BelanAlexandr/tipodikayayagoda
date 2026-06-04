@@ -2,14 +2,32 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"tipodikayayagoda/internal/models"
 )
 
 func AllProd(searchQuery string) ([]models.Product, error) {
-	query := "SELECT id, name, description, img_url, offer, category_id FROM products WHERE name ILIKE $1 LIMIT 15"
+	if searchQuery == "" {
+		return nil, nil
+	}
 
-	rows, err := db.Query(query, "%"+searchQuery+"%")
+	query := `
+        SELECT 
+            id, 
+            name, 
+            description, 
+            img_url, 
+            offer, 
+            category_id,
+            ts_rank(name_tsvector, plainto_tsquery('russian', $1)) AS rank
+        FROM products 
+        WHERE name_tsvector @@ plainto_tsquery('russian', $1)
+        ORDER BY rank DESC, LENGTH(name) ASC, id DESC 
+        LIMIT 15`
+
+	rows, err := db.Query(query, searchQuery)
 	if err != nil {
+		fmt.Println("Query error:", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -20,6 +38,7 @@ func AllProd(searchQuery string) ([]models.Product, error) {
 		var product models.Product
 		var desc sql.NullString
 		var imgURL sql.NullString
+		var rank float64
 
 		err := rows.Scan(
 			&product.ID,
@@ -28,6 +47,7 @@ func AllProd(searchQuery string) ([]models.Product, error) {
 			&imgURL,
 			&product.Offer,
 			&product.Category_id,
+			&rank,
 		)
 		if err != nil {
 			return nil, err
