@@ -14,7 +14,7 @@ func GetProdpoID(userID int, search string, limit int, lastID int, lastPrice flo
 	argIdx := 1
 
 	if search != "" {
-		searchCond := fmt.Sprintf("(p.name_tsvector @@ plainto_tsquery('russian', $%d) OR p.name ILIKE '%%' || $%d || '%%')", argIdx, argIdx)
+		searchCond := fmt.Sprintf("(p.name_tsvector @@ websearch_to_tsquery('russian', $%d) OR p.name ILIKE '%%' || $%d || '%%')", argIdx, argIdx)
 		countConditions = append(countConditions, searchCond)
 		countArgs = append(countArgs, search)
 		argIdx++
@@ -65,7 +65,7 @@ func GetProdpoID(userID int, search string, limit int, lastID int, lastPrice flo
 
 	var dataConditions []string
 	if search != "" {
-		dataConditions = append(dataConditions, fmt.Sprintf("(p.name_tsvector @@ plainto_tsquery('russian', $%d) OR p.name ILIKE '%%' || $%d || '%%')", searchArgNum, searchArgNum))
+		dataConditions = append(dataConditions, fmt.Sprintf("(p.name_tsvector @@ websearch_to_tsquery('russian', $%d) OR p.name ILIKE '%%' || $%d || '%%')", searchArgNum, searchArgNum))
 	}
 	if categoryID > 0 {
 		dataConditions = append(dataConditions, fmt.Sprintf("p.category_id = $%d", catArgNum))
@@ -104,9 +104,9 @@ func GetProdpoID(userID int, search string, limit int, lastID int, lastPrice flo
 			orderBy = "rank DESC, LENGTH(p.name) ASC, p.id DESC"
 			if lastID > 0 {
 				dataConditions = append(dataConditions, fmt.Sprintf(`(
-					ts_rank(p.name_tsvector, plainto_tsquery('russian', $%d)) < $%d
-					OR (ts_rank(p.name_tsvector, plainto_tsquery('russian', $%d)) = $%d AND LENGTH(p.name) > $%d)
-					OR (ts_rank(p.name_tsvector, plainto_tsquery('russian', $%d)) = $%d AND LENGTH(p.name) = $%d AND p.id < $%d)
+					ts_rank(p.name_tsvector, websearch_to_tsquery('russian', $%d)) < $%d
+					OR (ts_rank(p.name_tsvector, websearch_to_tsquery('russian', $%d)) = $%d AND LENGTH(p.name) > $%d)
+					OR (ts_rank(p.name_tsvector, websearch_to_tsquery('russian', $%d)) = $%d AND LENGTH(p.name) = $%d AND p.id < $%d)
 				)`, searchArgNum, dIdx, searchArgNum, dIdx, dIdx+1, searchArgNum, dIdx, dIdx+1, dIdx+2))
 				dataArgs = append(dataArgs, lastRank, lastLength, lastID)
 				dIdx += 3
@@ -129,9 +129,9 @@ func GetProdpoID(userID int, search string, limit int, lastID int, lastPrice flo
 	dataArgs = append(dataArgs, limit)
 	limitArgNum := dIdx
 
-	rankSelect := ", 0.0 as rank"
+	rankSelect := "0.0 as rank"
 	if search != "" && sort != "price_asc" && sort != "price_desc" && sort != "id_asc" {
-		rankSelect = fmt.Sprintf(", ts_rank(p.name_tsvector, plainto_tsquery('russian', $%d)) as rank", searchArgNum)
+		rankSelect = fmt.Sprintf(", ts_rank(p.name_tsvector, websearch_to_tsquery('russian', $%d)) as rank", searchArgNum)
 	}
 
 	dataQuery := fmt.Sprintf(`
