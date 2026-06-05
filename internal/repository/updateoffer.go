@@ -11,11 +11,15 @@ func UpdateOffer(id int, price float64, count int, user_id int) error {
 
 	_, err := db.Exec(productQuery, price, count, id, user_id)
 	productQuery = `
-        UPDATE products 
-        SET min_price = $2  
-        WHERE id = $1 
-          AND (min_price > $2 OR min_price = 0.00);`
-	_, err = db.Exec(productQuery, id, price)
+    UPDATE products p
+    SET min_price = COALESCE((
+        SELECT MIN(price) 
+        FROM product_offers 
+        WHERE product_id = p.id
+    ), 0.00)
+    WHERE p.id = $1;`
+
+	_, err = db.Exec(productQuery, id)
 	if err != nil {
 		return fmt.Errorf("failed to update products table: %w", err)
 	}

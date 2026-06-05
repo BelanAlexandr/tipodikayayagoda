@@ -131,30 +131,30 @@ func GetProdpoID(userID int, search string, limit int, lastID int, lastPrice flo
 
 	rankSelect := "0.0 as rank"
 	if search != "" && sort != "price_asc" && sort != "price_desc" && sort != "id_asc" {
-		rankSelect = fmt.Sprintf(", ts_rank(p.name_tsvector, websearch_to_tsquery('russian', $%d)) as rank", searchArgNum)
+		rankSelect = fmt.Sprintf("ts_rank(p.name_tsvector, websearch_to_tsquery('russian', $%d)) as rank", searchArgNum)
 	}
 
 	dataQuery := fmt.Sprintf(`
-		SELECT 
-			p.id, 
-			p.name, 
-			p.description,  
-			COALESCE(agg.price, 0.0) as price,    
-			COALESCE(agg.count, 0) as total_count, 
-			p.img_url, 
-			p.category_id 
-			%s                                     
-		FROM products p
-		LEFT JOIN LATERAL (
-			SELECT count, price
-			FROM product_offers 
-			WHERE seller_id = $%d
-			  AND product_id = p.id
-			LIMIT 1
-		) agg ON true
-		%s
-		ORDER BY %s
-		LIMIT $%d`, rankSelect, SellerIdArgNum, dataWhere, orderBy, limitArgNum)
+        SELECT 
+            p.id, 
+            p.name, 
+            p.description,  
+            COALESCE(agg.price, 0.0) as price,    
+            COALESCE(agg.count, 0) as total_count, 
+            p.img_url, 
+            p.category_id, -- Поставили запятую тут
+            %s             -- Теперь здесь всегда чистая строка без лишних или недостающих запятых
+        FROM products p
+        LEFT JOIN LATERAL (
+            SELECT count, price
+            FROM product_offers 
+            WHERE seller_id = $%d
+              AND product_id = p.id
+            LIMIT 1
+        ) agg ON true
+        %s
+        ORDER BY %s
+        LIMIT $%d`, rankSelect, SellerIdArgNum, dataWhere, orderBy, limitArgNum)
 
 	rows, err := db.Query(dataQuery, dataArgs...)
 	if err != nil {

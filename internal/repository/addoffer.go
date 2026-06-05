@@ -14,11 +14,14 @@ func AddOffer(id, count int, price float64, user_id int) error {
 
 	_, err = db.Exec(productQuery, id)
 	productQuery = `
-        UPDATE products 
-        SET min_price = $2  
-        WHERE id = $1 
-          AND (min_price > $2 OR min_price = 0.00);`
-	_, err = db.Exec(productQuery, id, price)
+          UPDATE products p
+    SET min_price = COALESCE((
+        SELECT MIN(price) 
+        FROM product_offers 
+        WHERE product_id = p.id
+    ), 0.00)
+    WHERE p.id = $1;`
+	_, err = db.Exec(productQuery, id)
 	if err != nil {
 		log.Println("Ошибка сохранения уведомления в БД:", err)
 		return err
