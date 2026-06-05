@@ -6,7 +6,7 @@ import (
 	"tipodikayayagoda/internal/config"
 	"tipodikayayagoda/internal/handler"
 	"tipodikayayagoda/internal/repository"
-	"tipodikayayagoda/internal/routes" // Убедитесь, что импортируете пакет с новой функцией SetupRouter
+	"tipodikayayagoda/internal/routes"
 	"tipodikayayagoda/internal/storage"
 	"tipodikayayagoda/internal/utils"
 	"tipodikayayagoda/pkg/database"

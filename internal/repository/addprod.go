@@ -8,7 +8,7 @@ import (
 func Addproduct(product models.Product) error {
 
 	productQuery := `
-    INSERT INTO products (id, name, description, img_url, category_id)
+    INSERT INTO products (id, name, description, img_url, category_id, min_price)
     VALUES (
         COALESCE(
            
@@ -21,9 +21,9 @@ func Addproduct(product models.Product) error {
         
         1
     ),
-    $1, $2, $3, $4
+    $1, $2, $3, $4,$5
 );  `
-	_, err := db.Exec(productQuery, product.Name, product.Description, product.ImgURL, product.Category_id)
+	_, err := db.Exec(productQuery, product.Name, product.Description, product.ImgURL, product.Category_id, 0.00)
 	if err != nil {
 		return fmt.Errorf("insert into products failed: %w", err)
 	}
