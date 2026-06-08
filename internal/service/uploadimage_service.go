@@ -38,7 +38,7 @@ func UploadImage(id int, file multipart.File, header *multipart.FileHeader) (str
 		return "", fmt.Errorf("ошибка загрузки в MinIO: %w", err)
 	}
 
-	newURL := fmt.Sprintf("http://192.168.1.100:9000/%s/%s", storage.BucketName, filename)
+	newURL := fmt.Sprintf("http://192.168.5.98:9000/%s/%s", storage.BucketName, filename)
 
 	err = repository.Updateimage(newURL, id)
 	if err != nil {
