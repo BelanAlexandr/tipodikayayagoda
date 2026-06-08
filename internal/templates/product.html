@@ -285,7 +285,7 @@ async function loadProduct() {
         el("desc").innerText = p.description || "Описание отсутствует";
         
         const img = el("productImage");
-        img.src = (p.img_url && p.img_url.trim() !== "") ? p.img_url : "http://localhost:9000/images/default.png";
+        img.src = (p.img_url && p.img_url.trim() !== "") ? p.img_url : "http://192.168.5.98:9000/images/default.png";
         img.style.display = "block";
 
         if (isAdmin) {
