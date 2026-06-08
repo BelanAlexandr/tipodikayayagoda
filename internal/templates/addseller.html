@@ -60,7 +60,7 @@
     </div>
 
     <div id="productPreview" class="product-preview" style="display: none;">
-        <img id="previewImg" src="" alt="Фото товара" class="preview-img" onerror="this.onerror=null; this.src='http://127.0.0.1:9000/images/default.png';">
+        <img id="previewImg" src="" alt="Фото товара" class="preview-img" onerror="this.onerror=null; this.src='http://192.168.5.98:9000/images/default.png';">
         <div class="preview-text"><strong>Категория:</strong> <span id="previewCategory">Загрузка...</span></div>
         <div class="preview-text"><strong>Описание:</strong> <span id="previewDescription"></span></div>
     </div>
@@ -139,12 +139,12 @@
         products.forEach((product) => {
             const catObj = allCategories.find(c => c.id === Number(product.category_id));
             const catName = catObj ? catObj.name : "Без категории";
-            const img = product.img_url || 'http://127.0.0.1:9000/images/default.png';
+            const img = product.img_url || 'http://192.168.5.98:9000/images/default.png';
 
             const item = document.createElement("div");
             item.className = "search-item";
             item.innerHTML = `
-                <img src="${img}" onerror="this.onerror=null; this.src='http://127.0.0.1:9000/images/default.png';">
+                <img src="${img}" onerror="this.onerror=null; this.src='http://192.168.5.98:9000/images/default.png';">
                 <div class="item-info">
                     <span class="item-name">${product.name}</span>
                     <span class="item-cat">${catName}</span>
@@ -173,7 +173,7 @@
         const categoryObj = allCategories.find(c => c.id === Number(product.category_id));
         document.getElementById("previewCategory").innerText = categoryObj ? categoryObj.name : "Без категории";
         document.getElementById("previewDescription").innerText = product.description || "Описание отсутствует";
-        document.getElementById("previewImg").src = product.img_url || 'http://127.0.0.1:9000/images/default.png';
+        document.getElementById("previewImg").src = product.img_url || 'http://192.168.5.98:9000/images/default.png';
         
         document.getElementById("productPreview").style.display = "block";
         document.getElementById("price").value = product.price || product.min_price || "";
