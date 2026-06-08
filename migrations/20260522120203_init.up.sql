@@ -27,7 +27,7 @@ CREATE TABLE products (
     description VARCHAR(255) NOT NULL, 
     img_url VARCHAR(255),
     offer BOOLEAN NOT NULL DEFAULT FALSE,
-    min_price NUMERIC(10, 2) NOT NULL,
+    min_price NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
     category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
     name_tsvector TSVECTOR GENERATED ALWAYS AS (to_tsvector('russian', name)) STORED
 );
