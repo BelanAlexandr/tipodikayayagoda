@@ -12,5 +12,6 @@ type ProductDetails struct {
 	Description string        `json:"description"`
 	ImageURL    string        `json:"img_url"`
 	CategoryID  int           `json:"category_id"`
+	Category    string        `json:"category"`
 	Offers      []OfferDetail `json:"offers"`
 }

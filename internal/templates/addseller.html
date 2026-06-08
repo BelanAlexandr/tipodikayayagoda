@@ -88,6 +88,9 @@
 </div>
 
 <script>
+    // Получаем ID авторизованного продавца из контекста Gin
+    const userId = Number("{{.UserID}}");
+
     const params = new URLSearchParams(window.location.search);
     const productIdFromUrl = params.get("id");
     const isEdit = productIdFromUrl !== null;
@@ -95,7 +98,7 @@
     let selectedProductId = isEdit ? Number(productIdFromUrl) : null;
     let allCategories = []; 
     let searchTimeout = null;
-    let currentFocus = -1; // Для управления стрелочками с клавиатуры
+    let currentFocus = -1; 
 
     const searchInput = document.getElementById("searchProduct");
     const resultsContainer = document.getElementById("searchResults");
@@ -111,14 +114,12 @@
         } catch (e) { console.error("Ошибка загрузки категорий", e); }
     }
 
-    // ДИНАМИЧЕСКИЙ ПОИСК С СЕРВЕРА
     async function searchProductsFromBackend(query) {
         if (!query.trim()) {
             resultsContainer.style.display = "none";
             return;
         }
         try {
-            // Обрати внимание: отправляем query на бэкенд, чтобы он отдал только нужные совпадения (например, LIMIT 10)
             const res = await fetch(`/api/addseller/all?search=${encodeURIComponent(query)}`); 
             const products = await res.json();
             
@@ -151,7 +152,6 @@
                 </div>
             `;
 
-            // Клик по элементу из поиска
             item.addEventListener("click", () => {
                 selectProduct(product);
             });
@@ -169,6 +169,7 @@
         fillProductData(product);
     }
 
+    // ИСПРАВЛЕНО: Умное извлечение старой цены и количества текущего продавца
     function fillProductData(product) {
         const categoryObj = allCategories.find(c => c.id === Number(product.category_id));
         document.getElementById("previewCategory").innerText = categoryObj ? categoryObj.name : "Без категории";
@@ -176,35 +177,47 @@
         document.getElementById("previewImg").src = product.img_url || 'http://192.168.5.98:9000/images/default.png';
         
         document.getElementById("productPreview").style.display = "block";
-        document.getElementById("price").value = product.price || product.min_price || "";
-        document.getElementById("count").value = product.count || product.total_count || "";
+        
+        let initialPrice = "";
+        let initialCount = "";
+
+        // Если есть массив офферов, ищем предложение текущего авторизованного продавца
+        if (product.offers && Array.isArray(product.offers)) {
+            const myOffer = product.offers.find(o => Number(o.seller_id) === userId);
+            if (myOffer) {
+                initialPrice = myOffer.price;
+                initialCount = myOffer.count;
+            }
+        }
+
+        // fallback на случай, если структура API на поиске отличается от карточки товара
+        document.getElementById("price").value = initialPrice !== "" ? initialPrice : (product.price || product.min_price || "");
+        document.getElementById("count").value = initialCount !== "" ? initialCount : (product.count || product.total_count || "");
         
         document.getElementById("editForm").style.display = "block";
         document.getElementById("backLinkContainer").style.display = "none"; 
     }
 
-    // Слушатель ввода с защитой от спама запросами (Debounce)
     searchInput.addEventListener("input", (e) => {
         clearTimeout(searchTimeout);
         const query = e.target.value;
         
         searchTimeout = setTimeout(() => {
             searchProductsFromBackend(query);
-        }, 300); // Задержка в 300 миллисекунд
+        }, 300); 
     });
 
-    // Навигация кнопками клавиатуры (Стрелочки и Enter)
     searchInput.addEventListener("keydown", (e) => {
         let items = resultsContainer.getElementsByClassName("search-item");
         if (items.length === 0 || items[0].style.cursor === "default") return;
 
-        if (e.keyCode === 40) { // Стрелка вниз
+        if (e.keyCode === 40) { 
             currentFocus++;
             addActive(items);
-        } else if (e.keyCode === 38) { // Стрелка вверх
+        } else if (e.keyCode === 38) { 
             currentFocus--;
             addActive(items);
-        } else if (e.keyCode === 13) { // Enter
+        } else if (e.keyCode === 13) { 
             e.preventDefault();
             if (currentFocus > -1 && items[currentFocus]) {
                 items[currentFocus].click();
@@ -227,14 +240,12 @@
         }
     }
 
-    // Закрывать поиск при клике мимо него
     document.addEventListener("click", (e) => {
         if (e.target !== searchInput && e.target !== resultsContainer) {
             resultsContainer.style.display = "none";
         }
     });
 
-    // Отправка формы
     document.getElementById("editForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         const msg = document.getElementById("message");
@@ -244,10 +255,10 @@
             count: parseInt(document.getElementById("count").value)
         };
 
-      let method = isEdit ? "PUT" : "POST"; 
-let url = isEdit 
-    ? `/api/offer/update/${selectedProductId}` 
-    : `/api/addseller/?id=${selectedProductId}`;
+        let method = isEdit ? "PUT" : "POST"; 
+        let url = isEdit 
+            ? `/api/offer/update/${selectedProductId}` 
+            : `/api/addseller/?id=${selectedProductId}`;
 
         try {
             const res = await fetch(url, {
@@ -271,7 +282,6 @@ let url = isEdit
         }
     });
 
-    // Логика инициализации страницы
     async function init() {
         await fetchCategories();
 
@@ -280,7 +290,6 @@ let url = isEdit
             document.getElementById("submitBtn").innerText = "Сохранить изменения";
             document.getElementById("searchGroup").style.display = "none";
 
-            // Если мы редактируем, запрашиваем конкретный товар по ID с сервера
             try {
                 const res = await fetch(`/api/product/?id=${selectedProductId}`);
                 if (res.ok) {

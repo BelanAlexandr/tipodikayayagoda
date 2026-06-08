@@ -78,7 +78,7 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
             display: flex;
             flex-direction: column;
-            height: 450px;
+            height: 480px; /* Немного увеличили высоту, чтобы тег категории не сжимал текст */
             justify-content: space-between;
         }
 
@@ -86,6 +86,24 @@
             font-size: 18px;
             font-weight: bold;
             margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ===== СТИЛЬ ДЛЯ ТЕГА КАТЕГОРИИ ===== */
+        .category-badge {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #0d47a1;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            max-width: 100%;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -433,6 +451,19 @@ async function loadProducts() {
             let priceText = displayPrice > 0 ? `от ${displayPrice}$` : "Цена не указана";
             let countText = displayCount > 0 ? `${displayCount} шт.` : "Нет в наличии";
 
+            // ОПРЕДЕЛЕНИЕ ИМЕНИ КАТЕГОРИИ ИЗ JSON
+            // Поддерживает: p.category_name, p.category.name, p.Category.Name или выводит "Категория №" по ID
+            let catName = "Без категории";
+            if (p.category_name) {
+                catName = p.category_name;
+            } else if (p.category && p.category.name) {
+                catName = p.category.name;
+            } else if (p.Category && p.Category.Name) {
+                catName = p.Category.Name;
+            } else if (p.category_id || p.Category_ID) {
+                catName = `Категория №${p.category_id || p.Category_ID}`;
+            }
+
             div.innerHTML = `
             <div>
                 <img 
@@ -448,6 +479,7 @@ async function loadProducts() {
                 />
                 
                 <div class="product-title" title="${p.name}">${p.name}</div>
+                <div class="category-badge" title="${catName}">${catName}</div>
                 <div class="description">${p.description || "Описание отсутствует"}</div>
             </div>
 

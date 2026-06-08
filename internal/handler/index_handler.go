@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"tipodikayayagoda/internal/models"
+	"tipodikayayagoda/internal/repository"
 	"tipodikayayagoda/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -98,7 +99,14 @@ func IndexHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error loading products"})
 		return
 	}
-
+	for i := range products {
+		categoryName, err := repository.GetCategoryID(products[i].Category_id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		products[i].Category = categoryName
+	}
 	response := ProductsResponse{
 		Products:   products,
 		TotalCount: totalCount,

@@ -40,7 +40,21 @@
         .title {
             font-size: 26px;
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 5px; /* Уменьшили отступ, чтобы тег категории встал плотнее */
+        }
+
+        /* ===== СТИЛЬ ДЛЯ ТЕГА КАТЕГОРИИ ===== */
+        .category-badge {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #0d47a1;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .desc {
@@ -130,7 +144,7 @@
 
         .offers-table {
             width: 100%;
-            border-collapse: border-collapse;
+            border-collapse: collapse; /* Исправлено border-collapse: border-collapse */
             margin-top: 15px;
             margin-bottom: 25px;
             font-size: 14px;
@@ -224,6 +238,8 @@
     <input type="file" id="imageInput" style="display:none">
 
     <div class="title" id="title">Загрузка...</div>
+    <div id="categoryContainer"></div> 
+    
     <div class="desc" id="desc"></div>
     
     <div class="info" id="info"></div>
@@ -255,7 +271,6 @@ const isAdmin = "{{.IsAdmin}}".trim() === "true";
 const isSeller = "{{.IsSeller}}".trim() === "true";
 const canBuy = "{{.CanBuy}}".trim() === "true";
 
-// ИСПРАВЛЕНО: Теперь забираем ID из Query-параметров (?id=1000001) вместо путей URL
 const params = new URLSearchParams(window.location.search);
 const productId = params.get("id"); 
 
@@ -270,7 +285,6 @@ async function loadProduct() {
     }
 
     try {
-        // ИСПРАВЛЕНО: Запрос отправляется на роут /api/product/?id=1000001
         const res = await fetch(`/api/product/?id=${productId}`, { credentials: "include" });
         if (!res.ok) {
             el("title").innerText = "Товар не найден";
@@ -284,6 +298,26 @@ async function loadProduct() {
         el("title").innerText = p.name;
         el("desc").innerText = p.description || "Описание отсутствует";
         
+        // --- ОБРАБОТКА И ОТОБРАЖЕНИЕ КАТЕГОРИИ ---
+        let catName = "";
+        if (p.category_name) {
+            catName = p.category_name;
+        } else if (p.category && p.category.name) {
+            catName = p.category.name;
+        } else if (p.Category && p.Category.Name) {
+            catName = p.Category.Name;
+        } else if (p.category_id || p.Category_ID) {
+            catName = `Категория №${p.category_id || p.Category_ID}`;
+        }
+
+        const catContainer = el("categoryContainer");
+        if (catName) {
+            catContainer.innerHTML = `<div class="category-badge">${catName}</div>`;
+        } else {
+            catContainer.innerHTML = "";
+        }
+        // ----------------------------------------
+
         const img = el("productImage");
         img.src = (p.img_url && p.img_url.trim() !== "") ? p.img_url : "http://192.168.5.98:9000/images/default.png";
         img.style.display = "block";
@@ -328,7 +362,6 @@ async function loadProduct() {
 
         el("info").innerHTML = infoHTML;
 
-        // --- ДИНАМИЧЕСКАЯ ГЕНЕРАЦИЯ КНОПОК ---
         let buttonsHTML = "";
         
         if (canBuy && currentProductOffers.length > 0) {
@@ -343,7 +376,7 @@ async function loadProduct() {
         if (isAdmin) {
             buttonsHTML += `
                 <button class="edit" onclick="editProduct()">Редактировать товар</button>
-                <button class="delete" onclick="deleteProduct(${p.id})">Удалить товар</button>
+                <button class="delete" onclick="deleteProduct(${p.id || p.ID})">Удалить товар</button>
             `;
         }
         buttonsHTML += `<button class="back" onclick="back()">Назад</button>`;
@@ -355,7 +388,6 @@ async function loadProduct() {
     }
 }
 
-// ЗАГРУЗКА КАРТИНКИ
 el("imageInput").addEventListener("change", async function () {
     if (!isAdmin) {
         alert("У вас нет прав для изменения изображения товара.");
@@ -369,14 +401,12 @@ el("imageInput").addEventListener("change", async function () {
     const formData = new FormData();
     formData.append("image", file);
 
-    // Оставляем в пути, так как роут бэкенда ожидает ID в пути: /api/uploadimage/:id
     const res = await fetch("/api/uploadimage/" + productId, { method: "POST", body: formData, credentials: "include" });
     if (!res.ok) { alert("Ошибка загрузки картинки"); return; }
 
     loadProduct();
 });
 
-// --- ЛОГИКА ВЫЗОВА МОДАЛЬНОГО ОКНА ПОКУПКИ ---
 function buy() {
     const select = el("buySellerId");
     select.innerHTML = "";
@@ -404,7 +434,6 @@ async function confirmBuy() {
     if (!count || count <= 0) { el("buyError").innerText = "Введите корректное количество"; return; }
     if (!sellerId) { el("buyError").innerText = "Выберите продавца"; return; }
 
-    // Роут бэкенда ожидает ID в пути: /api/product/buy/:id
     const res = await fetch("/api/product/buy/" + productId, {
         method: "POST",
         credentials: "include",
@@ -421,8 +450,6 @@ async function confirmBuy() {
     }
 }
 
-// --- НАВИГАЦИЯ И ПЕРЕНАПРАВЛЕНИЯ ---
-// ИСПРАВЛЕНО: Ссылки теперь строятся через query-параметр ?id=
 function editOffer() { 
     window.location.href = "/addseller?id=" + productId; 
 }
@@ -433,7 +460,6 @@ function editProduct() {
 
 async function deleteProduct(id) {
     if (!confirm("Удалить товар?")) return;
-    // Роут бэкенда ожидает ID в пути: /api/product/delete/:id
     await fetch("/api/product/delete/" + id, { method: "DELETE", credentials: "include" });
     window.location.href = "/index";
 }

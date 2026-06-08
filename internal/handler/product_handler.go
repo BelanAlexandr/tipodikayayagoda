@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"tipodikayayagoda/internal/models"
+	"tipodikayayagoda/internal/repository"
 	"tipodikayayagoda/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -63,6 +64,10 @@ func Product(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "product not found"})
 		return
 	}
-
+	product.Category, err = repository.GetCategoryID(product.CategoryID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 	c.JSON(http.StatusOK, product)
 }

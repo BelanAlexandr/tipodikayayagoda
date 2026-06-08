@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"tipodikayayagoda/internal/models"
+	"tipodikayayagoda/internal/repository"
 	"tipodikayayagoda/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -23,5 +24,15 @@ func AllProd(c *gin.Context) {
 	if prod == nil {
 		prod = []models.Product{}
 	}
+
+	for i := range prod {
+		categoryName, err := repository.GetCategoryID(prod[i].Category_id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		prod[i].Category = categoryName
+	}
+
 	c.JSON(http.StatusOK, prod)
 }
