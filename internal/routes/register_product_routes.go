@@ -19,5 +19,6 @@ func RegisterProductRoutes(api *gin.RouterGroup) {
 	api.POST("/category/add", handler.AddCategoryHandler)
 	api.POST("/addproduct", handler.AddProductHandler)
 	api.POST("/uploadimage/:id", handler.UploadImageHandler)
+	api.GET("/analytics", handler.GetAnalyticsData)
 
 }

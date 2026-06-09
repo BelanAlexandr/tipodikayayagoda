@@ -6,7 +6,7 @@ import (
 	"tipodikayayagoda/internal/models"
 )
 
-func Register(user models.User, createdAt time.Time) error {
+func Register(user models.User, createdAt time.Time) (int, error) {
 
 	var exists bool
 	err := db.QueryRow(
@@ -15,9 +15,8 @@ func Register(user models.User, createdAt time.Time) error {
 	).Scan(&exists)
 
 	if exists {
-		return fmt.Errorf("user with login %s already exists", user.Login)
+		return -1, fmt.Errorf("user with login %s already exists", user.Login)
 	}
-
 	_, err = db.Exec(
 		"INSERT INTO users(login,pass,name,secondname,role,date) VALUES($1, $2,$3, $4, $5,$6)",
 		user.Login,
@@ -29,8 +28,16 @@ func Register(user models.User, createdAt time.Time) error {
 	)
 	if err != nil {
 		fmt.Println("Error opening database:", err)
-		return err
+		return -1, err
 	}
-
-	return nil
+	var id int
+	err = db.QueryRow(
+		"SELECT id FROM users WHERE login=$1",
+		user.Login,
+	).Scan(&id)
+	if err != nil {
+		fmt.Println("Error checking user existence:", err)
+		return -1, err
+	}
+	return id, nil
 }

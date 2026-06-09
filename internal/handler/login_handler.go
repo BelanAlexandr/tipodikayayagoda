@@ -4,7 +4,10 @@ import (
 	"html/template"
 	"net/http"
 	"strings"
+	"tipodikayayagoda/internal/models"
+	"tipodikayayagoda/internal/repository"
 	"tipodikayayagoda/internal/service"
+	"tipodikayayagoda/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -41,5 +44,32 @@ func Login(c *gin.Context) {
 
 	c.SetCookie("tokenn", token, 3600, "/", "", false, true)
 
+	cookie, err := c.Cookie("tokenn")
+	if err != nil {
+		c.Redirect(http.StatusSeeOther, "/login")
+		return
+	}
+
+	claims, err := utils.ValidateToken(cookie)
+
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Невалидный токен"})
+		c.Abort()
+		return
+	}
+	idFloat, ok := claims["id"].(float64)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "неверный формат ID в токене"})
+		c.Abort()
+		return
+	}
+	idint := int(idFloat)
+	go repository.TrackEvent(models.AnalyticsEvent{
+		UserID:    &idint,
+		ProductID: nil,
+		SellerID:  nil,
+		EventType: models.EventLogin,
+		Quantity:  1,
+	})
 	c.Redirect(http.StatusFound, "/index")
 }

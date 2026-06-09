@@ -7,12 +7,12 @@ import (
 	"tipodikayayagoda/internal/utils"
 )
 
-func Register(user models.User, userrole int) error {
+func Register(user models.User, userrole int) (int, error) {
 	hash, err := utils.HashPassword(user.Password)
 	user.Password = hash
 	ti := time.Now()
 	if err != nil {
-		return err
+		return -1, err
 	}
 	if userrole != models.RoleAdmin {
 		user.Role = models.RoleClient

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 	"tipodikayayagoda/internal/models"
+	"tipodikayayagoda/internal/repository"
 	"tipodikayayagoda/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -44,8 +45,15 @@ func BuyProductHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	go repository.TrackEvent(models.AnalyticsEvent{
+		UserID:    &userID,
+		ProductID: &id,
+		SellerID:  &req.SellerID,
+		EventType: models.EventPurchase,
+		Quantity:  req.Count,
+	})
 	go Message(userID)
 	c.JSON(http.StatusOK, gin.H{
-		"message": "prdocut_created",
+		"message": "product_bought",
 	})
 }

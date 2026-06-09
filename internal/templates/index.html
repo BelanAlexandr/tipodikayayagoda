@@ -467,7 +467,7 @@ async function loadProducts() {
             div.innerHTML = `
             <div>
                 <img 
-                    src="${p.img_url && p.img_url.trim() !== '' ? p.img_url : 'http://192.168.5.98:9000/images/default.png'}"
+                    src="${p.img_url && p.img_url.trim() !== '' ? p.img_url : 'http://localhost:9000/images/default.png'}"
                     style="
                         width:100%;
                         height:180px;
@@ -475,7 +475,7 @@ async function loadProducts() {
                         border-radius:10px;
                         margin-bottom:10px;
                     "
-                    onerror="this.onerror=null; this.src='http://192.168.5.98:9000/images/default.png';"
+                    onerror="this.onerror=null; this.src='http://localhost:9000/images/default.png';"
                 />
                 
                 <div class="product-title" title="${p.name}">${p.name}</div>

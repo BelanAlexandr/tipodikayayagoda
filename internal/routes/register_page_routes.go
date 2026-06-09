@@ -12,4 +12,6 @@ func RegisterPageRoutes(rg *gin.RouterGroup) {
 	rg.GET("/addproduct", handler.AddProductHandlerShow)
 	rg.GET("/adduser", handler.AdminRegisterShow)
 	rg.GET("/addseller", handler.SellerOfferShow)
+	rg.GET("/analytics", handler.AnalyticsHandlerShow)
+
 }

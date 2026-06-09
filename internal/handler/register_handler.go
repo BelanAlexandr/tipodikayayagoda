@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"tipodikayayagoda/internal/models"
+	"tipodikayayagoda/internal/repository"
 	"tipodikayayagoda/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -39,11 +40,17 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	err := service.Register(req, models.RoleClient)
+	id, err := service.Register(req, models.RoleClient)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error registering user"})
 		return
 	}
-
+	go repository.TrackEvent(models.AnalyticsEvent{
+		UserID:    &id,
+		ProductID: nil,
+		SellerID:  nil,
+		EventType: models.EventRegister,
+		Quantity:  1,
+	})
 	c.Redirect(http.StatusFound, "/login")
 }

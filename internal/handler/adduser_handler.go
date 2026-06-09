@@ -46,7 +46,7 @@ func AdminRegister(c *gin.Context) {
 	}
 	req.Login = strings.TrimSpace(req.Login)
 	req.Password = strings.TrimSpace(req.Password)
-	err := service.Register(req, userrole)
+	_, err := service.Register(req, userrole)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
