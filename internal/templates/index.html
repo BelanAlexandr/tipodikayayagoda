@@ -55,6 +55,16 @@
             cursor: pointer;
         }
 
+        /* Стиль для кнопки аналитики */
+        .analytics-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
         .logout-btn {
             background: #f44336;
             color: white;
@@ -78,7 +88,7 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
             display: flex;
             flex-direction: column;
-            height: 480px; /* Немного увеличили высоту, чтобы тег категории не сжимал текст */
+            height: 480px;
             justify-content: space-between;
         }
 
@@ -91,7 +101,6 @@
             text-overflow: ellipsis;
         }
 
-        /* ===== СТИЛЬ ДЛЯ ТЕГА КАТЕГОРИИ ===== */
         .category-badge {
             display: inline-block;
             background: #e3f2fd;
@@ -140,7 +149,6 @@
         .edit-btn { background: #ff9800; color: white; margin-right: 5px; }
         .delete-btn { background: #f44336; color: white; }
 
-        /* ===== СТИЛИ ПАГИНАЦИИ ===== */
         .pagination-container {
             flex-shrink: 0;
             display: flex;
@@ -185,7 +193,6 @@
             padding: 0 5px;
         }
 
-        /* ===== СТИЛИ КОЛОКОЛЬЧИКА УВЕДОМЛЕНИЙ ===== */
         .notification-bell-container {
             position: relative;
             display: inline-block;
@@ -205,8 +212,9 @@
         #notifications-dropdown {
             display: none;
             position: absolute;
-            right: 0;
-            top: 40px;
+            left:0;
+            right: auto;
+            top: calc(100%+10px);
             width: 320px;
             background: white;
             border-radius: 8px;
@@ -313,13 +321,11 @@ let currentPage = 1;
 const limit = 10; 
 let totalCount = 0; 
 
-// Параметры текущего курсора для отправки в API
 let currentLastId = 0;
 let currentLastPrice = 0.0;
 let currentLastRank = 0.0;   
 let currentLastLength = 0;   
 
-// Стек для хранения истории курсоров (для кнопки "Назад")
 let pageHistory = [];
 
 /* HEADER BUTTONS */
@@ -337,6 +343,11 @@ if (isSeller) {
 
 if (isAdmin) {
     headerButtons += `<button class="admin-btn" style="background:#9c27b0;" onclick="addCategoryPrompt()">Создать категорию</button>`;
+}
+
+// Показываем кнопку аналитики только админам или продавцам
+if (isAdmin || isSeller) {
+    headerButtons += `<button class="analytics-btn" onclick="goToAnalytics()">📊 Аналитика</button>`;
 }
 
 headerButtons += `<button class="logout-btn" onclick="logout()">Выйти</button>`;
@@ -400,7 +411,6 @@ async function loadProducts() {
     let sort = document.getElementById("sortInput").value; 
     const category = document.getElementById("categoryInput").value; 
 
-    // Ссылка на бэкенд с курсорными токенами
     const url = `/api/index?search=${encodeURIComponent(search)}&limit=${limit}&sort=${sort}&category=${category}&last_id=${currentLastId}&last_price=${currentLastPrice}&last_rank=${currentLastRank}&last_length=${currentLastLength}`;
 
     try {
@@ -451,8 +461,6 @@ async function loadProducts() {
             let priceText = displayPrice > 0 ? `от ${displayPrice}$` : "Цена не указана";
             let countText = displayCount > 0 ? `${displayCount} шт.` : "Нет в наличии";
 
-            // ОПРЕДЕЛЕНИЕ ИМЕНИ КАТЕГОРИИ ИЗ JSON
-            // Поддерживает: p.category_name, p.category.name, p.Category.Name или выводит "Категория №" по ID
             let catName = "Без категории";
             if (p.category_name) {
                 catName = p.category_name;
@@ -514,7 +522,6 @@ function renderCursorPagination(products, totalCount) {
 
     const totalPages = Math.ceil(totalCount / limit) || 1;
 
-    // 1. Кнопка "‹ Назад"
     const backBtn = document.createElement("button");
     backBtn.className = "pagination-btn";
     backBtn.innerText = "‹ Назад";
@@ -533,19 +540,16 @@ function renderCursorPagination(products, totalCount) {
         }
     };
 
-    // 2. Индикатор страниц
     const indicator = document.createElement("span");
     indicator.className = "page-indicator";
     indicator.innerText = `Страница ${currentPage} из ${totalPages}`;
 
-    // 3. Кнопка "Вперед ›"
     const nextBtn = document.createElement("button");
     nextBtn.className = "pagination-btn";
     nextBtn.innerText = "Вперед ›";
     nextBtn.disabled = currentPage === totalPages || products.length < limit;
     nextBtn.onclick = () => {
         if (products.length === limit) {
-            // Сохраняем предыдущий курсор в стек
             pageHistory.push({ 
                 lastId: currentLastId, 
                 lastPrice: currentLastPrice,
@@ -584,6 +588,7 @@ function renderCursorPagination(products, totalCount) {
 function goToAddUser() { window.location.href = "/adduser"; }
 function goToAddProduct() { window.location.href = "/addproduct"; }
 function goToAddSeller() { window.location.href = "/addseller"; }
+function goToAnalytics() { window.location.href = "/analytics"; } // Кнопка ведет сюда
 
 function editProduct(id) {
     if (isSeller) {

@@ -169,7 +169,7 @@
         </div>
 
         <div class="header-buttons">
-            <a href="/" class="nav-btn" style="background: #e0e0e0; color: #333;">На главную</a>
+            <a href="/index" class="nav-btn" style="background: #e0e0e0; color: #333;">На главную</a>
             <button class="logout-btn" onclick="logout()">Выйти</button>
         </div>
     </div>
@@ -189,7 +189,7 @@ async function loadAnalyticsData() {
     const subtitle = document.getElementById("page-subtitle");
 
     try {
-        const res = await fetch("/api/analytics/data", { credentials: "include" });
+        const res = await fetch("/api/analytics", { credentials: "include" });
         const responseData = await res.json();
 
         if (!res.ok) {

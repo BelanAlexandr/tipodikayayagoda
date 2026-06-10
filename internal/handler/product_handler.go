@@ -69,16 +69,18 @@ func Product(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	go func() {
-		for _, offer := range product.Offers {
-			_ = repository.TrackEvent(models.AnalyticsEvent{
-				UserID:    &uid,
-				ProductID: &product.ID,
-				SellerID:  &offer.SellerID,
-				EventType: models.EventView,
-				Quantity:  1,
-			})
-		}
-	}()
+	if userRole == models.RoleClient {
+		go func() {
+			for _, offer := range product.Offers {
+				_ = repository.TrackEvent(models.AnalyticsEvent{
+					UserID:    &uid,
+					ProductID: &product.ID,
+					SellerID:  &offer.SellerID,
+					EventType: models.EventView,
+					Quantity:  1,
+				})
+			}
+		}()
+	}
 	c.JSON(http.StatusOK, product)
 }

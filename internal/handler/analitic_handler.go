@@ -65,7 +65,7 @@ func GetAnalyticsData(c *gin.Context) {
 	if userRole == models.RoleSeller {
 		stats, err := repository.GetSellerAnalytics(userID)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка загрузки статистики продавца"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"type": "seller", "data": stats})

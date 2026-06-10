@@ -10,3 +10,6 @@ CREATE TABLE IF NOT EXISTS site_analytics (
 
 CREATE INDEX IF NOT EXISTS idx_analytics_seller_type ON site_analytics(seller_id, event_type);
 CREATE INDEX IF NOT EXISTS idx_analytics_user_type ON site_analytics(user_id, event_type);
+
+CREATE INDEX IF NOT EXISTS idx_analytics_product_id 
+ON site_analytics (product_id);
