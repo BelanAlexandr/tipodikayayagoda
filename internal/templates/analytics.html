@@ -30,9 +30,12 @@
             border-radius: 12px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
             display: flex;
-            justify-between: space-between;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
+            /* Шапка и её элементы ВСЕГДА выше таблиц и графиков */
+            position: relative;
+            z-index: 2000;
         }
 
         .header-buttons {
@@ -113,6 +116,9 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.08);
             overflow: hidden;
             width: 100%;
+            /* Опускаем таблицу ниже уровня выпадающего списка шапки */
+            position: relative;
+            z-index: 1;
         }
 
         table {
@@ -152,9 +158,78 @@
             display: inline-block;
             cursor: pointer;
             user-select: none;
+            padding: 5px;
+            z-index: 2500;
         }
 
-        #bell-icon { font-size: 26px; }
+        #bell-icon { 
+            font-size: 26px; 
+            transition: transform 0.2s ease;
+            display: inline-block;
+        }
+
+        #bell-icon:hover {
+            transform: scale(1.1);
+        }
+
+        .bell-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #f44336;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 50%;
+            padding: 2px 6px;
+            min-width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #notifications-dropdown {
+            display: none;
+            position: absolute;
+            left: auto;
+            right: 0;
+            top: calc(100% + 15px);
+            width: 320px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.2);
+            border: 1px solid #e0e0e0;
+            max-height: 350px;
+            overflow-y: auto;
+            /* Максимальный приоритет видимости на странице */
+            z-index: 3000;
+        }
+
+        .dropdown-header {
+            padding: 12px 15px;
+            font-weight: bold;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+            color: #333;
+            text-align: left;
+        }
+
+        .notification-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f9f9f9;
+            font-size: 13px;
+            line-height: 1.4;
+            color: #444;
+            transition: background 0.2s ease;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .notification-item:hover { background: #f5f5f5; }
+        .notification-item.unread { background: #f0f7ff; }
+        .notification-item.unread:hover { background: #e2f0ff; }
+        .empty-notifications { padding: 20px; color: #999; text-align: center; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -163,8 +238,19 @@
     <div class="header">
         <div style="display: flex; align-items: center; gap: 20px;">
             <h2>📊 Аналитика системы</h2>
+            
             <div class="notification-bell-container" id="bellContainer">
                 <span id="bell-icon">🔔</span>
+                <span id="bell-badge" class="bell-badge" style="display: none;">0</span>
+
+                <div id="notifications-dropdown">
+                    <div class="dropdown-header">
+                        <span>Уведомления</span>
+                    </div>
+                    <div id="notifications-list">
+                        <div class="empty-notifications">Нет новых уведомлений</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -237,7 +323,7 @@ async function loadAnalyticsData() {
             const products = responseData.data;
 
             if (!products || products.length === 0) {
-                renderZone.innerHTML = "<p>У вас пока нет активных товаров или логов активности.</p>";
+                renderZone.innerHTML = "<p>У вас пока нет active_todayных товаров или логов активности.</p>";
                 return;
             }
 
@@ -287,8 +373,60 @@ async function logout() {
     window.location.href = "/login";
 }
 
+/* ===== СТАБИЛЬНАЯ ЛОГИКА РАБОТЫ КОЛОКОЛЬЧИКА ===== */
+const bellContainer = document.getElementById("bellContainer");
+const bellDropdown = document.getElementById("notifications-dropdown");
+const bellBadge = document.getElementById("bell-badge");
+
+// Переключаем отображение дропдауна при клике на контейнер колокольчика
+bellContainer.addEventListener("click", (event) => {
+    // Предотвращаем всплытие клика к document, чтобы он сразу же не закрывался
+    event.stopPropagation(); 
+    
+    // Проверяем статус видимости через inline-стили напрямую
+    const isDisplayed = bellDropdown.style.display === "block";
+    
+    if (isDisplayed) {
+        bellDropdown.style.display = "none";
+    } else {
+        bellDropdown.style.display = "block";
+        // При открытии обнуляем бейдж уведомлений
+        bellBadge.style.display = "none";
+        bellBadge.innerText = "0";
+    }
+});
+
+// Закрываем дропдаун, только если кликнули полностью ВНЕ колокольчика
+document.addEventListener("click", (event) => {
+    const isInsideBell = bellContainer.contains(event.target);
+    if (!isInsideBell) {
+        bellDropdown.style.display = "none";
+    }
+});
+
+function updateBellBadge(count, messages = []) {
+    if (count > 0) {
+        bellBadge.innerText = count;
+        bellBadge.style.display = "flex";
+        
+        const listContainer = document.getElementById("notifications-list");
+        if (listContainer && messages.length > 0) {
+            listContainer.innerHTML = "";
+            messages.forEach(msg => {
+                const item = document.createElement("div");
+                item.className = "notification-item unread";
+                item.innerText = msg;
+                listContainer.appendChild(item);
+            });
+        }
+    } else {
+        bellBadge.style.display = "none";
+    }
+}
+
 // Запуск при загрузке страницы
 loadAnalyticsData();
 </script>
+<script src="/static/js/websocket.js"></script>
 </body>
 </html>
